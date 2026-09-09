@@ -1,0 +1,46 @@
+---
+# =============================================================
+#  Registro de host keys de la maqueta.
+#  Se ejecuta despues de crear o recrear maquinas antes de cualquier otro playbook
+# =============================================================
+
+- name: Registrar host keys de la maqueta en el nodo de control
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+
+    # Lee ansible_host del inventario
+    # y consulta la clave publica que expone cada uno por SSH
+    - name: Obtener la clave publica Ed25519 de cada host
+      ansible.builtin.command:
+        cmd: "ssh-keyscan -t ed25519 -T 5 {{ hostvars[item].ansible_host }}"
+      register: keyscan
+      changed_when: false
+      failed_when: false          # un host apagado no debe abortar el playbook
+      loop: "{{ groups['all'] }}"
+      loop_control:
+        label: "{{ item }} ({{ hostvars[item].ansible_host }})"
+
+    - name: Incorporar las claves obtenidas a known_hosts
+      ansible.builtin.known_hosts:
+        name: "{{ hostvars[item.item].ansible_host }}"
+        key: "{{ item.stdout }}"
+        hash_host: true           # no deja las IPs administradas en claro
+        state: present
+      loop: "{{ keyscan.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stdout | length > 0
+
+    - name: Informar los hosts que no respondieron
+      ansible.builtin.debug:
+        msg: >-
+          Sin respuesta de {{ item.item }}
+          ({{ hostvars[item.item].ansible_host }}).
+          Verificar que la maquina este encendida y volver a ejecutar.
+      loop: "{{ keyscan.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      when: item.stdout | length == 0
