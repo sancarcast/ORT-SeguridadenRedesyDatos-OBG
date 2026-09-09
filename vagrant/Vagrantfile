@@ -1,0 +1,78 @@
+# =============================================================
+#  Maqueta CDG - Obligatorio Seguridad en Redes y Datos (ORT)
+# =============================================================
+
+require 'yaml'
+
+CONFIG = YAML.load_file(File.join(File.dirname(__FILE__), 'config.yaml'))
+CTRL_PUBKEY_PATH = File.join(File.dirname(__FILE__), 'files', 'ctrl01_ed25519.pub')
+CTRL_PUBKEY = File.exist?(CTRL_PUBKEY_PATH) ? File.read(CTRL_PUBKEY_PATH).strip : nil
+
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+
+  # Sin carpeta compartida
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+
+  # Para reintentar de ssh sin que de timeout
+  config.vm.boot_timeout = 600
+
+  CONFIG['vms'].each do |vm|
+
+    config.vm.define vm['name'] do |node|
+
+      node.vm.box      = vm['box']
+      node.vm.hostname = "#{vm['name']}.lab.cdg.uy"
+
+      # Adaptador 2: red de gestion (host-only)
+      # Es la unica red alcanzable desde el host. Por aca entra Ansible.
+      node.vm.network "private_network",
+                      ip: vm['ip_mgmt'],
+                      netmask: "255.255.255.0"
+
+      # Adaptador 3: red de la zona (internal, aislada)
+      # El trafico entre zonas pasa obligatoriamente por OPNsense.
+      # Excepcion: los hosts cuya zona es mgmt ya viven en el plano de
+      # gestion, asi que no llevan una segunda interfaz.
+      if vm['zona'] != 'mgmt'
+        node.vm.network "private_network",
+                        ip: vm['ip_zona'],
+                        netmask: "255.255.255.0",
+                        virtualbox__intnet: vm['zona']
+      end
+	  
+      # Autoriza la clave publica del nodo de control para que Ansible pueda conectarse.
+      if CTRL_PUBKEY && vm['name'] != 'ctrl01'
+        node.vm.provision "shell",
+          name: "autorizar clave de ctrl01",
+          privileged: false,
+          inline: <<-SHELL
+            mkdir -p ~/.ssh && chmod 700 ~/.ssh
+            touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
+            grep -qxF '#{CTRL_PUBKEY}' ~/.ssh/authorized_keys || echo '#{CTRL_PUBKEY}' >> ~/.ssh/authorized_keys
+          SHELL
+      end
+	  
+      node.vm.provider "virtualbox" do |vb|
+        vb.name   = vm['name']
+        vb.memory = vm['ram']
+        vb.cpus   = vm['cpus'] || CONFIG['defaults']['cpus']
+
+        # Descripcion visible en la GUI de VirtualBox
+        vb.customize ["modifyvm", :id, "--description", vm['rol']]
+
+        # Sin audio ni USB
+        vb.customize ["modifyvm", :id, "--audio-enabled", "off"]
+        vb.customize ["modifyvm", :id, "--usb", "off"]
+
+        # Reloj sincronizado con el host para Kerberos (FreeIPA)
+        # y para los de eventos en el SIEM.
+        vb.customize ["guestproperty", "set", :id,
+                      "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold",
+                      "1000"]
+      end
+
+    end
+  end
+end

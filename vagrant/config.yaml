@@ -1,0 +1,123 @@
+# =============================================================
+#  Inventario de la infraestructura para CDG
+# =============================================================
+
+# Redes de la maqueta.
+#  - mgmt: host-only. Plano de gestion. Unica alcanzable desde el host.
+#  - soc / app / dmz: internal (aisladas). Solo se comunican via OPNsense.
+redes:
+  mgmt:
+    tipo: hostonly
+    cidr: "10.10.10.0/24"
+    gateway: "10.10.10.254" # LAN
+  soc:
+    tipo: internal
+    cidr: "10.10.20.0/24"
+    gateway: "10.10.20.254" # OPT3
+  app:
+    tipo: internal
+    cidr: "10.10.30.0/24"
+    gateway: "10.10.30.254" # OPT2
+  dmz:
+    tipo: internal
+    cidr: "10.10.40.0/24"
+    gateway: "10.10.40.254" # OPT1
+defaults:
+  box_debian: "debian/bookworm64"
+  box_rocky: "rockylinux/9"
+  cpus: 1
+
+vms:
+  # ---------- Zona APP ----------
+  - name: ipa01
+    box: "almalinux/9"
+    ram: 3072
+    cpus: 2
+    zona: app
+    ip_mgmt: "10.10.10.11"
+    ip_zona: "10.10.30.11"
+    rol: "FreeIPA - IdP, Kerberos, DNS interno, HBAC y sudo"
+
+  - name: kc01
+    box: "debian/bookworm64"
+    ram: 2048
+    cpus: 2
+    zona: app
+    ip_mgmt: "10.10.10.12"
+    ip_zona: "10.10.30.12"
+    rol: "Keycloak - OIDC/OAuth2 federado contra FreeIPA"
+
+  - name: srv01
+    box: "debian/bookworm64"
+    ram: 1024
+    cpus: 1
+    zona: app
+    ip_mgmt: "10.10.10.21"
+    ip_zona: "10.10.30.21"
+    rol: "Servidor endurecido de referencia (CIS L1)"
+
+  - name: srv02
+    box: "debian/bookworm64"
+    ram: 1024
+    cpus: 1
+    zona: app
+    ip_mgmt: "10.10.10.22"
+    ip_zona: "10.10.30.22"
+    rol: "Servidor endurecido de referencia (CIS L1)"
+
+  # ---------- Zona SOC ----------
+  - name: wazuh01
+    box: "debian/bookworm64"
+    ram: 6144
+    cpus: 2
+    zona: soc
+    ip_mgmt: "10.10.10.31"
+    ip_zona: "10.10.20.11"
+    rol: "Wazuh all-in-one - SIEM, deteccion y respuesta"
+
+  - name: auto01
+    box: "debian/bookworm64"
+    ram: 4096
+    cpus: 2
+    zona: soc
+    ip_mgmt: "10.10.10.32"
+    ip_zona: "10.10.20.12"
+    rol: "n8n + Ollama - automatizacion no-code y enriquecimiento"
+
+  - name: gvm01
+    box: "debian/bookworm64"
+    ram: 4096
+    cpus: 2
+    zona: soc
+    ip_mgmt: "10.10.10.33"
+    ip_zona: "10.10.20.13"
+    rol: "Greenbone CE - escaneo de vulnerabilidades"
+
+  # ---------- Zona DMZ ----------
+  - name: nb01
+    box: "debian/bookworm64"
+    ram: 1024
+    cpus: 1
+    zona: dmz
+    ip_mgmt: "10.10.10.41"
+    ip_zona: "10.10.40.11"
+    rol: "NetBird self-hosted - VPN overlay con ACLs y SSO"
+
+  - name: bastion01
+    box: "debian/bookworm64"
+    ram: 4096
+    cpus: 2
+    zona: dmz
+    ip_mgmt: "10.10.10.42"
+    ip_zona: "10.10.40.12"
+    rol: "JumpServer - bastion con grabacion de sesion"
+    
+   # ---------- Zona MGMT ----------
+  - name: ctrl01
+    box: "debian/bookworm64"
+    ram: 2048
+    cpus: 2
+    zona: mgmt
+    ip_mgmt: "10.10.10.10"
+    ip_zona: "10.10.10.10"
+    rol: "Nodo de cntrol, con Ansible, GIT y herramientas de deploy"
