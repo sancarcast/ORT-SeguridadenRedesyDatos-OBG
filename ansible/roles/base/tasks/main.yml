@@ -24,7 +24,7 @@
   tags: [base, identidad]
 
 # Resolucion temporal entre hosts (hasta poner freeipa)
-# El bloque delimitado permite retirarlo despues
+
 - name: Publicar los hosts de la maqueta en /etc/hosts
   ansible.builtin.blockinfile:
     path: /etc/hosts
@@ -104,26 +104,43 @@
 
 # -------------------------------------------------------------
 #  Ruta por defecto hacia OPNsense
+#
+#  Redirige el trafico de salida hacia el firewall en lugar del
+#  adaptador NAT que Vagrant impone
 # -------------------------------------------------------------
 
-- name: Desplegar la unidad de ruta por defecto
-  ansible.builtin.template:
-    src: ruta-zona.service.j2
-    dest: /etc/systemd/system/ruta-zona.service
-    owner: root
-    group: root
-    mode: "0644"
-  when: base_configurar_ruta_default
+- name: Retirar la unidad systemd de ruta (reemplazada por if-up.d)
+  ansible.builtin.file:
+    path: /etc/systemd/system/ruta-zona.service
+    state: absent
   notify: recargar systemd
   tags: [base, red]
 
-- name: Habilitar y aplicar la ruta por defecto
-  ansible.builtin.systemd_service:
-    name: ruta-zona.service
-    enabled: true
-    state: started
-    daemon_reload: true
+- name: Desplegar el script de ruta por defecto
+  ansible.builtin.template:
+    src: ruta-zona.sh.j2
+    dest: /etc/network/if-up.d/ruta-zona
+    owner: root
+    group: root
+    mode: "0755"
   when: base_configurar_ruta_default
+  tags: [base, red]
+
+- name: Consultar la ruta por defecto vigente
+  ansible.builtin.command:
+    cmd: ip -4 route show default
+  register: base_ruta_actual
+  changed_when: false
+  tags: [base, red]
+
+# Solo actua si la ruta vigente no es ya la del gateway de zona
+#
+- name: Aplicar la ruta por defecto de inmediato
+  ansible.builtin.command:
+    cmd: "ip route replace default via {{ base_gateway }}"
+  when:
+    - base_configurar_ruta_default
+    - base_gateway not in base_ruta_actual.stdout
   tags: [base, red]
 
 - name: Verificar por donde sale el trafico
@@ -131,9 +148,20 @@
     cmd: ip route get 1.1.1.1
   register: base_ruta_salida
   changed_when: false
+  failed_when: false
   tags: [base, red, verificacion]
 
 - name: Mostrar la ruta de salida
   ansible.builtin.debug:
     msg: "{{ base_ruta_salida.stdout_lines | first }}"
+  when: base_ruta_salida.rc == 0
+  tags: [base, red, verificacion]
+
+- name: Advertir si no hay ruta de salida
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }} no tiene ruta de salida hacia Internet.
+      Verificar que la interfaz de zona este activa y que existan reglas
+      de filtrado para {{ base_gateway }} en OPNsense.
+  when: base_ruta_salida.rc != 0
   tags: [base, red, verificacion]
