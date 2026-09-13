@@ -27,7 +27,6 @@
       ansible.builtin.known_hosts:
         name: "{{ hostvars[item.item].ansible_host }}"
         key: "{{ item.stdout }}"
-        hash_host: true           # no deja las IPs administradas en claro
         state: present
       loop: "{{ keyscan.results }}"
       loop_control:
