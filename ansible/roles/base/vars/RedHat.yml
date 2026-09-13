@@ -1,0 +1,3 @@
+# RedHat
+base_ruta_metodo: "networkmanager"
+base_ruta_script: "/etc/NetworkManager/dispatcher.d/50-ruta-zona"

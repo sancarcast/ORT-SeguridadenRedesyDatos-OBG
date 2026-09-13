@@ -1,0 +1,22 @@
+#!/bin/sh
+# Ruta por defecto hacia el gateway de zona
+
+INTERFAZ="$1"
+ACCION="$2"
+
+# Solo interesa cuando una interfaz termina de configurarse
+
+case "$ACCION" in
+    up|dhcp4-change) ;;
+    *) exit 0 ;;
+esac
+
+[ "$INTERFAZ" = "lo" ] && exit 0
+
+# Solo instala la ruta si el gateway ya es alcanzable
+
+ip route get {{ base_gateway }} >/dev/null 2>&1 || exit 0
+
+ip route replace default via {{ base_gateway }}
+
+exit 0

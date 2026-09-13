@@ -118,8 +118,8 @@
 
 - name: Desplegar el script de ruta por defecto
   ansible.builtin.template:
-    src: ruta-zona.sh.j2
-    dest: /etc/network/if-up.d/ruta-zona
+    src: "ruta-zona-{{ base_ruta_metodo }}.sh.j2"
+    dest: "{{ base_ruta_script }}"
     owner: root
     group: root
     mode: "0755"
