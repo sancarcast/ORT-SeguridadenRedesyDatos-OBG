@@ -1,0 +1,7 @@
+---
+# Rutas y nombres de servicio propios de Debian
+base_chrony_service: "chrony"
+base_chrony_conf: "/etc/chrony/chrony.conf"
+base_chrony_driftfile: "/var/lib/chrony/chrony.drift"
+base_chrony_keyfile: "/etc/chrony/chrony.keys"
+base_chrony_logdir: "/var/log/chrony"

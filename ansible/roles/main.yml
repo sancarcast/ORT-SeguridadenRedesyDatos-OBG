@@ -1,0 +1,103 @@
+---
+# =======================================================================
+# Configuracion comun a todos los hosts de la maqueta antes del hardening
+# =======================================================================
+
+- name: Cargar variables de la familia de sistema operativo
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  tags: [base, siempre]
+
+# -------------------------------------------------------------
+#  Identidad del host
+# -------------------------------------------------------------
+
+- name: Establecer el nombre del host
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}.{{ base_dominio }}"
+  tags: [base, identidad]
+
+- name: Asegurar la entrada propia en /etc/hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s'
+    line: "127.0.1.1 {{ inventory_hostname }}.{{ base_dominio }} {{ inventory_hostname }}"
+    state: present
+  tags: [base, identidad]
+
+# Resolucion temporal entre hosts (hasta poner freeipa)
+# El bloque delimitado permite retirarlo despues
+- name: Publicar los hosts de la maqueta en /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    marker: "# {mark} MAQUETA CDG (gestionado por Ansible, rol base)"
+    block: |
+      {% for h in groups['all'] | sort %}
+      {{ hostvars[h].ansible_host | default('') }} {{ h }}.{{ base_dominio }} {{ h }}
+      {% endfor %}
+    state: "{{ 'present' if base_manage_hosts_file else 'absent' }}"
+  tags: [base, identidad]
+
+# -------------------------------------------------------------
+#  Zona horaria
+# -------------------------------------------------------------
+
+- name: Configurar la zona horaria
+  community.general.timezone:
+    name: "{{ base_timezone }}"
+  tags: [base, tiempo]
+
+# -------------------------------------------------------------
+#  Paquetes
+# -------------------------------------------------------------
+
+- name: Instalar los paquetes comunes
+  ansible.builtin.package:
+    name: "{{ base_common_packages + base_extra_packages }}"
+    state: present
+  tags: [base, paquetes]
+
+# -------------------------------------------------------------
+#  NTP
+# -------------------------------------------------------------
+
+- name: Desplegar la configuracion de chrony
+  ansible.builtin.template:
+    src: chrony.conf.j2
+    dest: "{{ base_chrony_conf }}"
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: reiniciar chrony
+  tags: [base, tiempo]
+
+- name: Habilitar y arrancar chrony
+  ansible.builtin.service:
+    name: "{{ base_chrony_service }}"
+    state: started
+    enabled: true
+  tags: [base, tiempo]
+
+# Verificacion
+- name: Consultar el estado de sincronizacion
+  ansible.builtin.command:
+    cmd: chronyc tracking
+  register: base_chrony_tracking
+  changed_when: false
+  failed_when: false
+  tags: [base, tiempo, verificacion]
+
+- name: Mostrar la fuente de tiempo en uso
+  ansible.builtin.debug:
+    msg: "{{ base_chrony_tracking.stdout_lines | select('search', 'Reference ID|Stratum|System time') | list }}"
+  when: base_chrony_tracking.rc == 0
+  tags: [base, tiempo, verificacion]
+
+- name: Advertir si chrony aun no sincronizo
+  ansible.builtin.debug:
+    msg: >-
+      chrony todavia no reporta sincronizacion en {{ inventory_hostname }}.
+      Es normal en los primeros minutos tras el arranque. Verificar con
+      'chronyc sources -v' si persiste.
+  when: base_chrony_tracking.rc != 0
+  tags: [base, tiempo, verificacion]

@@ -1,0 +1,30 @@
+---
+# =============================================================
+#  Rol base - valores por defecto
+# =============================================================
+
+# --- Zona horaria ---
+base_timezone: "America/Montevideo"
+
+# --- Sincronizacion de tiempo (chrony) ---
+base_ntp_servers:
+  - "0.south-america.pool.ntp.org"
+  - "1.south-america.pool.ntp.org"
+  - "2.south-america.pool.ntp.org"
+  - "3.south-america.pool.ntp.org"
+
+# Umbral de correccion abrupta del reloj
+base_ntp_makestep: "1.0 3"
+
+# --- Paquetes ---
+# Lista minima
+base_common_packages:
+  - chrony
+  - ca-certificates
+
+# Paquetes adicionales por host o grupo
+base_extra_packages: []
+
+# --- Resolucion de nombres temporal ---
+base_manage_hosts_file: true
+base_dominio: "lab.cdg.uy"

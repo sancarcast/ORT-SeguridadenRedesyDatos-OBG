@@ -1,0 +1,37 @@
+#
+# chrony.conf - gestionado por Ansible (rol base)
+# NO EDITAR A MANO: los cambios se pierden en la proxima ejecucion.
+#
+# Host: {{ inventory_hostname }}.{{ base_dominio }}
+#
+
+# --- Fuentes de tiempo ---
+{% for servidor in base_ntp_servers %}
+server {{ servidor }} iburst
+{% endfor %}
+
+# --- Estado local ---
+driftfile {{ base_chrony_driftfile }}
+keyfile {{ base_chrony_keyfile }}
+logdir {{ base_chrony_logdir }}
+
+# Corrige el reloj de golpe si el desfase inicial es grande, en lugar de
+# deslizarlo lentamente. Sin esto, un host recien creado puede tardar
+# horas en converger y Kerberos rechazaria sus tickets mientras tanto.
+makestep {{ base_ntp_makestep }}
+
+# Mantiene sincronizado el reloj de hardware con el del sistema.
+rtcsync
+
+# --- Endurecimiento ---
+# Este host es cliente NTP, no servidor: no responde consultas de nadie.
+# 'port 0' desactiva la escucha en el puerto 123/udp y reduce la
+# superficie expuesta, ademas de evitar su uso en ataques de
+# amplificacion NTP.
+port 0
+
+# El puerto de control de chronyc queda accesible solo desde el propio
+# host (comportamiento por defecto, se explicita para dejar constancia).
+cmdport 323
+bindcmdaddress 127.0.0.1
+bindcmdaddress ::1

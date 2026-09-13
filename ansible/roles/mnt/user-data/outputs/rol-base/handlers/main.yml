@@ -1,0 +1,8 @@
+---
+# handler al finalizar el play ante notificacion de alguna tarea
+# evita reiniciar el servicio
+
+- name: reiniciar chrony
+  ansible.builtin.service:
+    name: "{{ base_chrony_service }}"
+    state: restarted
