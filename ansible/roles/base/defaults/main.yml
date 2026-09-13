@@ -8,10 +8,7 @@ base_timezone: "America/Montevideo"
 
 # --- Sincronizacion de tiempo (chrony) ---
 base_ntp_servers:
-  - "0.south-america.pool.ntp.org"
-  - "1.south-america.pool.ntp.org"
-  - "2.south-america.pool.ntp.org"
-  - "3.south-america.pool.ntp.org"
+  - "{{ base_gateway }}"
 
 # Umbral de correccion abrupta del reloj
 base_ntp_makestep: "1.0 3"
@@ -28,3 +25,6 @@ base_extra_packages: []
 # --- Resolucion de nombres temporal ---
 base_manage_hosts_file: true
 base_dominio: "lab.cdg.uy"
+
+# --- Ruta por defecto hacia OPNsense ---
+base_configurar_ruta_default: true

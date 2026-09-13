@@ -1,0 +1,14 @@
+[Unit]
+Description=Ruta por defecto hacia el gateway de zona (gestionado por Ansible)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# Sustituye la ruta por defecto que instala el cliente DHCP del
+# adaptador NAT
+ExecStart=/usr/sbin/ip route replace default via {{ base_gateway }}
+
+[Install]
+WantedBy=multi-user.target

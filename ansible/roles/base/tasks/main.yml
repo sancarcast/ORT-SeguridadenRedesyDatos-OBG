@@ -1,4 +1,3 @@
----
 # =======================================================================
 # Configuracion comun a todos los hosts de la maqueta antes del hardening
 # =======================================================================
@@ -101,3 +100,40 @@
       'chronyc sources -v' si persiste.
   when: base_chrony_tracking.rc != 0
   tags: [base, tiempo, verificacion]
+
+
+# -------------------------------------------------------------
+#  Ruta por defecto hacia OPNsense
+# -------------------------------------------------------------
+
+- name: Desplegar la unidad de ruta por defecto
+  ansible.builtin.template:
+    src: ruta-zona.service.j2
+    dest: /etc/systemd/system/ruta-zona.service
+    owner: root
+    group: root
+    mode: "0644"
+  when: base_configurar_ruta_default
+  notify: recargar systemd
+  tags: [base, red]
+
+- name: Habilitar y aplicar la ruta por defecto
+  ansible.builtin.systemd_service:
+    name: ruta-zona.service
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: base_configurar_ruta_default
+  tags: [base, red]
+
+- name: Verificar por donde sale el trafico
+  ansible.builtin.command:
+    cmd: ip route get 1.1.1.1
+  register: base_ruta_salida
+  changed_when: false
+  tags: [base, red, verificacion]
+
+- name: Mostrar la ruta de salida
+  ansible.builtin.debug:
+    msg: "{{ base_ruta_salida.stdout_lines | first }}"
+  tags: [base, red, verificacion]

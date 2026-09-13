@@ -1,0 +1,2 @@
+# Gateway de red gestion (LAN)
+base_gateway: "10.10.10.254"

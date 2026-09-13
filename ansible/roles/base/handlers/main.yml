@@ -6,3 +6,7 @@
   ansible.builtin.service:
     name: "{{ base_chrony_service }}"
     state: restarted
+
+- name: recargar systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: true

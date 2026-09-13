@@ -1,0 +1,2 @@
+# Gateway de zona dmz (OPT1)
+base_gateway: "10.10.40.254"
