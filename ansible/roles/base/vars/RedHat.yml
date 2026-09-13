@@ -1,3 +1,10 @@
-# RedHat
+
+# Rutas y nombres de servicio propios de RHEL
+
+base_chrony_service: "chronyd"
+base_chrony_conf: "/etc/chrony.conf"
+base_chrony_driftfile: "/var/lib/chrony/drift"
+base_chrony_keyfile: "/etc/chrony.keys"
+base_chrony_logdir: "/var/log/chrony"
 base_ruta_metodo: "networkmanager"
 base_ruta_script: "/etc/NetworkManager/dispatcher.d/50-ruta-zona"
