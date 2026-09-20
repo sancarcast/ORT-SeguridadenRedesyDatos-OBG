@@ -1,0 +1,14 @@
+---
+# Control plane de la VPN. Unico punto de entrada a la maqueta.
+# Pendiente ajustar puertos
+firewall_reglas_extra:
+  - descripcion: "NetBird, senalizacion y gestion"
+    protocolo: tcp
+    puertos: [80, 443, 33073]
+    origen:
+      - "10.10.10.0/24"
+      - "10.10.40.0/24"
+
+  - descripcion: "NetBird, tunel WireGuard y STUN"
+    protocolo: udp
+    puertos: [3478, 51820]

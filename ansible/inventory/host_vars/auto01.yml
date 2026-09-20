@@ -1,0 +1,8 @@
+---
+# La interfaz de n8n se administra desde la red de gestion
+firewall_reglas_extra:
+  - descripcion: "Interfaz web de n8n"
+    protocolo: tcp
+    puertos: [5678]
+    origen:
+      - "10.10.10.0/24"

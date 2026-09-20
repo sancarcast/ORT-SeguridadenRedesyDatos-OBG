@@ -1,0 +1,85 @@
+---
+# =============================================================
+#  Rol firewall_nftables - tareas
+# =============================================================
+
+- name: Cargar variables de la familia de so
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  tags: [firewall, siempre]
+
+- name: Instalar nftables
+  ansible.builtin.package:
+    name: "{{ firewall_paquetes }}"
+    state: present
+  tags: [firewall, paquetes]
+
+# AlmaLinux 9 trae firewalld habilitado por defecto
+- name: Deshabilitar firewalld
+  ansible.builtin.systemd_service:
+    name: firewalld
+    state: stopped
+    enabled: false
+    masked: true
+  failed_when: false
+  when: ansible_os_family == "RedHat"
+  tags: [firewall]
+
+# Si la tarea falla, el archivo vigente queda intacto
+- name: Desplegar el ruleset
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: "{{ firewall_conf }}"
+    owner: root
+    group: root
+    mode: "0600"
+    backup: true
+    validate: "nft -c -f %s"
+  notify: recargar nftables
+  tags: [firewall]
+
+- name: Habilitar y arrancar nftables
+  ansible.builtin.service:
+    name: "{{ firewall_servicio }}"
+    state: started
+    enabled: true
+  tags: [firewall]
+
+# ---------------
+#  Verificacion
+# ---------------
+
+- name: Consultar el ruleset activo
+  ansible.builtin.command:
+    cmd: nft list ruleset
+  register: firewall_ruleset
+  changed_when: false
+  tags: [firewall, verificacion]
+
+- name: Comprobar que la politica de entrada es restrictiva
+  ansible.builtin.assert:
+    that:
+      - "'policy drop' in firewall_ruleset.stdout"
+    fail_msg: >-
+      El ruleset de {{ inventory_hostname }} no tiene politica de
+      descarte. Revisar la plantilla.
+    success_msg: "Politica de entrada restrictiva confirmada"
+  tags: [firewall, verificacion]
+
+- name: Comprobar que SSH sigue autorizado desde gestion
+  ansible.builtin.assert:
+    that:
+      - "'SSH desde gestion' in firewall_ruleset.stdout"
+    fail_msg: >-
+      El ruleset de {{ inventory_hostname }} no autoriza SSH desde la
+      red de gestion. Ansible perdera el acceso en el proximo arranque.
+    success_msg: "Acceso administrativo preservado"
+  tags: [firewall, verificacion]
+
+- name: Contar las reglas cargadas
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }}:
+      {{ firewall_ruleset.stdout_lines | select('search', 'accept|drop') | list | length }}
+      reglas activas,
+      {{ firewall_reglas_extra | length }} servicios propios declarados
+  tags: [firewall, verificacion]

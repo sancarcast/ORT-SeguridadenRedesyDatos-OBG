@@ -1,0 +1,15 @@
+---
+# Escaneo de vulnerabilidades. E xpone el protocolo de gestion hacia auto01, para consulta desde n8n
+
+firewall_reglas_extra:
+  - descripcion: "GMP de Greenbone"
+    protocolo: tcp
+    puertos: [9390]
+    origen:
+      - "10.10.20.0/24"
+
+  - descripcion: "Interfaz web de Greenbone"
+    protocolo: tcp
+    puertos: [9392]
+    origen:
+      - "10.10.10.0/24"

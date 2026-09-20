@@ -1,0 +1,9 @@
+---
+# Bastion.
+# Pendiente ajustar puertos
+firewall_reglas_extra:
+  - descripcion: "Interfaz web de JumpServer"
+    protocolo: tcp
+    puertos: [80, 443]
+    origen:
+      - "10.10.10.0/24"

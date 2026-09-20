@@ -1,0 +1,29 @@
+---
+# Proveedor de identidades. Kerberos, LDAP y DNS interno para toda la maqueta
+
+firewall_reglas_extra:
+  - descripcion: "Kerberos"
+    protocolo: tcp
+    puertos: [88, 464]
+
+  - descripcion: "Kerberos"
+    protocolo: udp
+    puertos: [88, 464]
+
+  - descripcion: "LDAP y LDAPS"
+    protocolo: tcp
+    puertos: [389, 636]
+
+  - descripcion: "DNS interno"
+    protocolo: tcp
+    puertos: [53]
+
+  - descripcion: "DNS interno"
+    protocolo: udp
+    puertos: [53]
+
+  - descripcion: "Interfaz web de FreeIPA"
+    protocolo: tcp
+    puertos: [80, 443]
+    origen:
+      - "10.10.10.0/24"

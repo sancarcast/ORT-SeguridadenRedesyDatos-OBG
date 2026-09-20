@@ -1,0 +1,96 @@
+#!/usr/sbin/nft -f
+#
+# Ruleset de nftables - gestionado por Ansible (rol firewall_nftables)
+
+flush ruleset
+
+table inet filter {
+
+    # =========================================================
+    #  ENTRADA
+    #  Politica por defecto: descartar. Solo se admite lo que
+    #  este explicitamente autorizado
+    # =========================================================
+    chain input {
+        type filter hook input priority filter; policy drop;
+
+        # Trafico interno del propio host.
+        iif "lo" accept comment "loopback"
+
+        # Respuestas a conexiones que inicio este host, y trafico relacionado
+        ct state established,related accept comment "conexiones ya establecidas"
+
+        # Paquetes que no corresponden a ninguna conexion valida
+        ct state invalid drop comment "estado invalido"
+
+        # ICMP: se admite para diagnostico y para el descubrimiento de MTU
+        ip protocol icmp icmp type { echo-request, echo-reply, destination-unreachable, time-exceeded, parameter-problem } accept comment "ICMP"
+        ip6 nexthdr ipv6-icmp accept comment "ICMPv6"
+
+        # Renovacion de la concesion DHCP en la int NAT para no perder vagrant ssh
+        iif "{{ firewall_iface_nat }}" udp dport 68 accept comment "cliente DHCP"
+
+        # -----------------
+        #  Administracion
+        # -----------------
+
+        # SSH unicamente desde la red de gestion
+        ip saddr {{ firewall_red_mgmt }} tcp dport {{ firewall_puerto_ssh }} accept comment "SSH desde gestion"
+
+{% if firewall_permitir_ssh_nat %}
+        # SSH desde la red NAT de VirtualBox
+        ip saddr {{ firewall_red_nat }} tcp dport {{ firewall_puerto_ssh }} accept comment "SSH de rescate por NAT (solo laboratorio)"
+{% endif %}
+
+        # ---------------------------------
+        #  Servicios propios de este host
+        # ---------------------------------
+{% for regla in firewall_reglas_extra %}
+
+        # {{ regla.descripcion }}
+{% for red in regla.origen | default(firewall_redes_maqueta) %}
+        ip saddr {{ red }} {{ regla.protocolo }} dport { {{ regla.puertos | join(', ') }} } accept comment "{{ regla.descripcion }}"
+{% endfor %}
+{% endfor %}
+{% if firewall_reglas_extra | length == 0 %}
+
+        # Este host no presta servicios de red: solo admite administracion.
+{% endif %}
+
+{% if firewall_log_descartes %}
+        # Registro de lo descartado, con limite para no llenar el disco
+        limit rate {{ firewall_log_limite }} log prefix "nft-entrada-descartada: " level info
+{% endif %}
+    }
+
+    # =========================================================
+    #  REENVIO
+    #  El unico que reenvia trafico es OPNsense, que no forma parte de este rol
+    # =========================================================
+    chain forward {
+        type filter hook forward priority filter; policy drop;
+{% if firewall_log_descartes %}
+        limit rate {{ firewall_log_limite }} log prefix "nft-reenvio-descartado: " level info
+{% endif %}
+    }
+
+    # =========================================================
+    #  SALIDA
+    #  Se admite por defecto, salvo por la interfaz NAT
+    # =========================================================
+    chain output {
+        type filter hook output priority filter; policy accept;
+
+        # Respuestas a conexiones entrantes por la interfaz NAT
+        oif "{{ firewall_iface_nat }}" ct state established,related accept comment "respuestas por NAT"
+
+        # Renovacion de la concesion DHCP
+        oif "{{ firewall_iface_nat }}" udp dport 67 accept comment "cliente DHCP"
+
+{% if firewall_log_descartes %}
+        oif "{{ firewall_iface_nat }}" limit rate {{ firewall_log_limite }} log prefix "nft-salida-nat-descartada: " level info
+{% endif %}
+        # Todo lo demas por la interfaz NAT queda descartado
+        oif "{{ firewall_iface_nat }}" drop comment "salida por NAT bloqueada"
+    }
+}

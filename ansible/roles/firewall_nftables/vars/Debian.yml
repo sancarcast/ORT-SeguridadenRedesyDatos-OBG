@@ -1,0 +1,6 @@
+---
+# Debian
+firewall_conf: "/etc/nftables.conf"
+firewall_paquetes:
+  - nftables
+firewall_servicio: "nftables"

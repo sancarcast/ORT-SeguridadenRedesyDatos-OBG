@@ -1,0 +1,7 @@
+---
+# La recarga aplica el ruleset nuevo sin reiniciar el servicio
+
+- name: recargar nftables
+  ansible.builtin.service:
+    name: "{{ firewall_servicio }}"
+    state: reloaded

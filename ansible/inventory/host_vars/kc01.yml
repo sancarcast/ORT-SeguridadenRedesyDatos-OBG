@@ -1,0 +1,10 @@
+---
+# Punto OIDC/OAuth2. Para NetBird desde la dmz y el bastion desde la red de gestion
+
+firewall_reglas_extra:
+  - descripcion: "Keycloak, punto OIDC"
+    protocolo: tcp
+    puertos: [8443]
+    origen:
+      - "10.10.10.0/24"
+      - "10.10.40.0/24"

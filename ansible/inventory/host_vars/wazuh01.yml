@@ -1,0 +1,18 @@
+---
+# SIEM. Recibe eventos de los agentes de toda la maqueta y expone su API para n8n
+firewall_reglas_extra:
+  - descripcion: "Agentes Wazuh, eventos y enrollment"
+    protocolo: tcp
+    puertos: [1514, 1515]
+
+  - descripcion: "API de Wazuh"
+    protocolo: tcp
+    puertos: [55000]
+    origen:
+      - "10.10.20.0/24"
+
+  - descripcion: "Interfaz web del SIEM"
+    protocolo: tcp
+    puertos: [443]
+    origen:
+      - "10.10.10.0/24"

@@ -11,9 +11,10 @@
     - role: base
       tags: [base]
 
-    # Pendientes:
-    # - role: firewall_nftables
-    #   tags: [firewall]
+  - role: firewall_nftables
+    tags: [firewall]
+
+    # Pendiente
     # - role: ssh_hardening
     #   tags: [ssh]
     # - role: auditd

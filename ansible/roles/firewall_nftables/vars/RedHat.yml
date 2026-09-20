@@ -1,0 +1,6 @@
+---
+# RHEL y derivados
+firewall_conf: "/etc/sysconfig/nftables.conf"
+firewall_paquetes:
+  - nftables
+firewall_servicio: "nftables"

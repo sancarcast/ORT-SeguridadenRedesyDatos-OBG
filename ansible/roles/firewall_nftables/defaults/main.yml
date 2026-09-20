@@ -1,0 +1,33 @@
+---
+# =============================================================
+#  Rol firewall_nftables
+#  Firewall local de cada host
+# =============================================================
+
+# Red de gestion
+firewall_red_mgmt: "10.10.10.0/24"
+
+# Cuatro zonas de la maqueta
+firewall_redes_maqueta:
+  - "10.10.10.0/24"
+  - "10.10.20.0/24"
+  - "10.10.30.0/24"
+  - "10.10.40.0/24"
+
+# --- Interfaz NAT de Vagrant ---
+firewall_iface_nat: "eth0"
+firewall_red_nat: "10.0.2.0/24"
+
+# Mantener SSH accesible desde la red NAT para poder seguir haciendo vagrant ssh
+firewall_permitir_ssh_nat: true
+
+# --- Puerto de SSH ---
+firewall_puerto_ssh: 22
+
+# --- Reglas especificas por host ---
+# Vacio por defecto. Cada host declara las suyas en host_vars/
+firewall_reglas_extra: []
+
+# --- Registro de paquetes descartados ---
+firewall_log_descartes: true
+firewall_log_limite: "5/minute"
