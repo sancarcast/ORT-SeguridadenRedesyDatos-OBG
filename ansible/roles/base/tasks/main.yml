@@ -4,7 +4,7 @@
 
 - name: Cargar variables de la familia de sistema operativo
   ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
-  tags: [base, siempre]
+  tags: always
 
 # -------------------------------------------------------------
 #  Identidad del host

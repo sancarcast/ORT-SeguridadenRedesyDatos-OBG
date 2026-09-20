@@ -5,7 +5,7 @@
 
 - name: Cargar variables de la familia de so
   ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
-  tags: [firewall, siempre]
+  tags: always
 
 - name: Instalar nftables
   ansible.builtin.package:
