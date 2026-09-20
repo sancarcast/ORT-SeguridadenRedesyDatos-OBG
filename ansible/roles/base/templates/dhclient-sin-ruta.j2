@@ -1,0 +1,9 @@
+#!/bin/sh
+# Impide que el cliente DHCP de la interfaz NAT instale una ruta por defecto
+
+case "$interface" in
+    {{ base_iface_nat }})
+        new_routers=""
+        old_routers=""
+        ;;
+esac

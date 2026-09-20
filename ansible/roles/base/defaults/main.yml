@@ -28,3 +28,6 @@ base_dominio: "lab.cdg.uy"
 
 # --- Ruta por defecto hacia OPNsense ---
 base_configurar_ruta_default: true
+
+# --- Interfaz NAT que Vagrant impone ---
+base_iface_nat: "eth0"

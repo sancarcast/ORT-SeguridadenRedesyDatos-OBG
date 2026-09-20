@@ -102,6 +102,18 @@
   tags: [base, tiempo, verificacion]
 
 
+- name: Impedir que el cliente DHCP de la interfaz NAT instale ruta por defecto
+  ansible.builtin.template:
+    src: dhclient-sin-ruta.j2
+    dest: "{{ base_dhclient_hook }}"
+    owner: root
+    group: root
+    mode: "0755"
+  when:
+    - base_configurar_ruta_default
+    - ansible_os_family == "Debian"
+  tags: [base, red]
+
 # -------------------------------------------------------------
 #  Ruta por defecto hacia OPNsense
 #
