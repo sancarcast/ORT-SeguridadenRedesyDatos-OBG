@@ -53,7 +53,21 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             grep -qxF '#{CTRL_PUBKEY}' ~/.ssh/authorized_keys || echo '#{CTRL_PUBKEY}' >> ~/.ssh/authorized_keys
           SHELL
       end
-	  
+
+      # --- Herramientas para ctrl01 ---
+      if vm['name'] == 'ctrl01'
+        node.vm.provision "shell",
+          name: "herramientas del nodo de control",
+          privileged: true,
+          inline: <<-SHELL
+            command -v ansible >/dev/null 2>&1 && command -v git >/dev/null 2>&1 && exit 0
+
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update -qq
+            apt-get install -y -qq ansible ansible-lint git
+          SHELL
+      end
+
       node.vm.provider "virtualbox" do |vb|
         vb.name   = vm['name']
         vb.memory = vm['ram']
