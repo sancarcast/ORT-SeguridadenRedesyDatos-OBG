@@ -8,3 +8,4 @@ base_chrony_keyfile: "/etc/chrony.keys"
 base_chrony_logdir: "/var/log/chrony"
 base_ruta_metodo: "networkmanager"
 base_ruta_script: "/etc/NetworkManager/dispatcher.d/50-ruta-zona"
+base_dhclient_hook: ""   # no aplica porque almalinux usa networkmanager

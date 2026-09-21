@@ -114,6 +114,28 @@
     - ansible_os_family == "Debian"
   tags: [base, red]
 
+# Tarea para almalinux que no tiene dhclient
+# obtiene nombre de int e impide que se instale ruta por defecto
+
+- name: Obtener el nombre de la conexion de NetworkManager en la interfaz NAT
+  ansible.builtin.shell:
+    cmd: "nmcli -t -f NAME,DEVICE connection show | awk -F: '$2==\"{{ base_iface_nat }}\" {print $1}'"
+  register: base_nm_conexion
+  changed_when: false
+  when:
+    - base_configurar_ruta_default
+    - ansible_os_family == "RedHat"
+  tags: [base, red]
+
+- name: Impedir que NetworkManager instale ruta por defecto en la interfaz NAT
+  ansible.builtin.command:
+    cmd: "nmcli connection modify '{{ base_nm_conexion.stdout | trim }}' ipv4.never-default yes"
+  when:
+    - base_configurar_ruta_default
+    - ansible_os_family == "RedHat"
+    - base_nm_conexion.stdout | trim | length > 0
+  tags: [base, red]
+
 # -------------------------------------------------------------
 #  Ruta por defecto hacia OPNsense
 #
