@@ -127,6 +127,17 @@
     - ansible_os_family == "RedHat"
   tags: [base, red]
 
+- name: Consultar si la conexion NAT ya esta marcada como never-default
+  ansible.builtin.command:
+    cmd: "nmcli -g ipv4.never-default connection show '{{ base_nm_conexion.stdout | trim }}'"
+  register: base_nm_estado
+  changed_when: false
+  when:
+    - base_configurar_ruta_default
+    - ansible_os_family == "RedHat"
+    - base_nm_conexion.stdout | trim | length > 0
+  tags: [base, red]
+
 - name: Impedir que NetworkManager instale ruta por defecto en la interfaz NAT
   ansible.builtin.command:
     cmd: "nmcli connection modify '{{ base_nm_conexion.stdout | trim }}' ipv4.never-default yes"
@@ -134,6 +145,7 @@
     - base_configurar_ruta_default
     - ansible_os_family == "RedHat"
     - base_nm_conexion.stdout | trim | length > 0
+    - base_nm_estado.stdout | default('') | trim != "yes"
   tags: [base, red]
 
 # -------------------------------------------------------------
