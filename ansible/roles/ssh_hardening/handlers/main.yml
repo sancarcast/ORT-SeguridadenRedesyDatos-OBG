@@ -4,4 +4,4 @@
 - name: recargar sshd
   ansible.builtin.service:
     name: sshd
-    state: reloaded
+    state: restarted
