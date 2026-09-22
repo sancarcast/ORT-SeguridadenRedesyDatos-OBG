@@ -1,0 +1,50 @@
+---
+# =============================================================
+#  Rol ssh_hardening
+# =============================================================
+
+# --- Modo de operacion ---
+ssh_modo_produccion: false
+
+# --- Puerto ---
+ssh_puerto: 7664
+
+# --- Politica de acceso ---
+# root: nunca por SSH
+ssh_permit_root_login: "no"
+
+# Solo autenticacion por clave publica
+ssh_password_authentication: "no"
+ssh_kbd_interactive: "no"
+
+# Grupos autorizados a entrar por SSH
+ssh_allow_groups:
+  - ssh-usuarios
+
+# --- Endurecimiento criptografico ---
+ssh_kex_algorithms: "curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512"
+ssh_ciphers: "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes256-ctr"
+ssh_macs: "hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com"
+
+# --- Parametros de sesion ---
+ssh_client_alive_interval: 300      
+ssh_client_alive_count_max: 2       
+ssh_login_grace_time: 30            
+ssh_max_auth_tries: 3
+ssh_max_sessions: 4
+
+# --- Reenvios ---
+ssh_allow_agent_forwarding: "no"
+ssh_allow_tcp_forwarding: "no"
+ssh_x11_forwarding: "no"
+
+# --- Banner ---
+ssh_banner_habilitado: true
+
+# --- Origenes autorizados (solo modo produccion) ---
+# En produccion, cada tipo de cuenta se restringe a su origen
+ssh_origen_ansible: "10.10.10.10"     # ctrl01
+ssh_origen_admins: "10.10.10.42"      # bastion01
+
+# --- Cuenta de automatizacion ---
+ssh_usuario_ansible: "ansible"

@@ -1,0 +1,7 @@
+---
+# Se usa reloaded para no cortar las conexiones SSH ya establecidas
+
+- name: recargar sshd
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded

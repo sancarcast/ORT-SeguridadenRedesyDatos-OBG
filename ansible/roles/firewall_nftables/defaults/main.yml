@@ -22,7 +22,7 @@ firewall_red_nat: "10.0.2.0/24"
 firewall_permitir_ssh_nat: true
 
 # --- Puerto de SSH ---
-firewall_puerto_ssh: 22
+firewall_puerto_ssh: 7664
 
 # --- Reglas especificas por host ---
 # Vacio por defecto. Cada host declara las suyas en host_vars/

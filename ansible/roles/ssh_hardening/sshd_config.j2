@@ -1,0 +1,56 @@
+# sshd_config - gestionado por Ansible (rol ssh_hardening)
+
+# --- Puertos ---
+Port {{ ssh_puerto }}
+{% if not ssh_modo_produccion %}
+# Puerto 22 conservado en desarrollo para 'vagrant ssh'. nftables solo
+# lo admite desde la red NAT. En produccion esta linea desaparece.
+Port 22
+{% endif %}
+
+# --- Protocolo y claves de host ---
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+# --- Autenticacion ---
+PermitRootLogin {{ ssh_permit_root_login }}
+PasswordAuthentication {{ ssh_password_authentication }}
+KbdInteractiveAuthentication {{ ssh_kbd_interactive }}
+PubkeyAuthentication yes
+PermitEmptyPasswords no
+AuthenticationMethods publickey
+
+# whitelist de grupos. Nadie fuera de estos grupos entra por SSH.
+AllowGroups {{ ssh_allow_groups | join(' ') }}
+
+# --- Criptografia ---
+KexAlgorithms {{ ssh_kex_algorithms }}
+Ciphers {{ ssh_ciphers }}
+MACs {{ ssh_macs }}
+
+# --- Parametros de sesion ---
+LoginGraceTime {{ ssh_login_grace_time }}
+MaxAuthTries {{ ssh_max_auth_tries }}
+MaxSessions {{ ssh_max_sessions }}
+ClientAliveInterval {{ ssh_client_alive_interval }}
+ClientAliveCountMax {{ ssh_client_alive_count_max }}
+
+# --- Reenvios ---
+AllowAgentForwarding {{ ssh_allow_agent_forwarding }}
+AllowTcpForwarding {{ ssh_allow_tcp_forwarding }}
+X11Forwarding {{ ssh_x11_forwarding }}
+
+# --- Endurecimiento adicional ---
+IgnoreRhosts yes
+HostbasedAuthentication no
+PermitUserEnvironment no
+Compression no
+TCPKeepAlive no
+UseDNS no
+
+{% if ssh_banner_habilitado %}
+Banner /etc/issue.net
+{% endif %}
+
+# Subsistema SFTP
+Subsystem sftp /usr/lib/openssh/sftp-server

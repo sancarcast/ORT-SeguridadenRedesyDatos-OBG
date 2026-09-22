@@ -1,0 +1,80 @@
+---
+# =============================================================
+#  Rol ssh_hardening - tareas
+# =============================================================
+
+# -------------------------------------------------------------
+#  Grupo de acceso
+# -------------------------------------------------------------
+
+- name: Crear el grupo de acceso SSH
+  ansible.builtin.group:
+    name: "{{ ssh_allow_groups[0] }}"
+    state: present
+  tags: [ssh]
+
+# En desarrollo, la cuenta que usa Ansible es vagrant
+- name: Asegurar que la cuenta de administracion pertenezca al grupo
+  ansible.builtin.user:
+    name: "{{ 'vagrant' if not ssh_modo_produccion else ssh_usuario_ansible }}"
+    groups: "{{ ssh_allow_groups[0] }}"
+    append: true
+  tags: [ssh]
+
+# -------------------------------------------------------------
+#  Banner
+# -------------------------------------------------------------
+
+- name: Desplegar el banner de acceso
+  ansible.builtin.template:
+    src: issue.net.j2
+    dest: /etc/issue.net
+    owner: root
+    group: root
+    mode: "0644"
+  when: ssh_banner_habilitado
+  tags: [ssh]
+
+# -------------------------------------------------------------
+#  Configuracion de sshd
+# -------------------------------------------------------------
+
+- name: Desplegar la configuracion de sshd
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: "0600"
+    backup: true
+    validate: "sshd -t -f %s"
+  notify: recargar sshd
+  tags: [ssh]
+
+# -------------------------------------------------------------
+#  Ajuste del firewall al nuevo puerto
+# -------------------------------------------------------------
+
+- name: Aplicar la configuracion de sshd de inmediato
+  ansible.builtin.meta: flush_handlers
+  tags: [ssh]
+
+# -------------------------------------------------------------
+#  Verificacion
+# -------------------------------------------------------------
+
+- name: Verificar que sshd escucha en el puerto nuevo
+  ansible.builtin.wait_for:
+    port: "{{ ssh_puerto }}"
+    host: "{{ ansible_host }}"
+    timeout: 15
+  delegate_to: localhost
+  become: false
+  tags: [ssh, verificacion]
+
+- name: Confirmar acceso por el puerto nuevo
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }}: sshd operativo en el puerto {{ ssh_puerto }}
+      (modo {{ 'produccion' if ssh_modo_produccion else 'desarrollo' }}).
+  tags: [ssh, verificacion]
