@@ -39,7 +39,7 @@ table inet filter {
 
 {% if firewall_permitir_ssh_nat %}
         # SSH desde la red NAT de VirtualBox
-        ip saddr {{ firewall_red_nat }} tcp dport {{ firewall_puerto_ssh }} accept comment "SSH de rescate por NAT (solo laboratorio)"
+        ip saddr {{ firewall_red_nat }} tcp dport 22 accept comment "SSH de rescate por NAT (solo laboratorio)"
 {% endif %}
 
         # ---------------------------------
