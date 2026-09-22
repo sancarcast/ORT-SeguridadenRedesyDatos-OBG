@@ -35,6 +35,26 @@
   when: ssh_banner_habilitado
   tags: [ssh]
 
+# -----------------------------------------------------------
+# Etiquetar nuevo puerto ssh para evitar bloqueo por SELinux
+# -----------------------------------------------------------
+
+- name: Instalar herramientas de gestion de SELinux
+  ansible.builtin.package:
+    name: policycoreutils-python-utils
+    state: present
+  when: ansible_os_family == "RedHat"
+  tags: [ssh]
+
+- name: Etiquetar puerto ssh
+  community.general.seport:
+    ports: "{{ ssh_puerto }}"
+    proto: tcp
+    setype: ssh_port_t
+    state: present
+  when: ansible_os_family == "RedHat"
+  tags: [ssh]
+
 # -------------------------------------------------------------
 #  Configuracion de sshd
 # -------------------------------------------------------------
