@@ -35,7 +35,7 @@ table inet filter {
         # -----------------
 
         # SSH unicamente desde la red de gestion
-        ip saddr {{ firewall_red_mgmt }} tcp dport { 22, {{ firewall_puerto_ssh }} accept comment "SSH desde gestion"
+        ip saddr {{ firewall_red_mgmt }} tcp dport { 22, {{ firewall_puerto_ssh }} } accept comment "SSH desde gestion"
 
 {% if firewall_permitir_ssh_nat %}
         # SSH desde la red NAT de VirtualBox
