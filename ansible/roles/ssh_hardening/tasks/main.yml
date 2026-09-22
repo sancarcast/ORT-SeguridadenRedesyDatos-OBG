@@ -53,6 +53,7 @@
     setype: ssh_port_t
     state: present
   when: ansible_os_family == "RedHat"
+  notify: recargar sshd
   tags: [ssh]
 
 # -------------------------------------------------------------
