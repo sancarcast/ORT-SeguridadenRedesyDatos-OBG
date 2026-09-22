@@ -19,6 +19,7 @@ KbdInteractiveAuthentication {{ ssh_kbd_interactive }}
 PubkeyAuthentication yes
 PermitEmptyPasswords no
 AuthenticationMethods publickey
+UsePAM yes
 
 # whitelist de grupos. Nadie fuera de estos grupos entra por SSH.
 AllowGroups {{ ssh_allow_groups | join(' ') }}
@@ -53,4 +54,4 @@ Banner /etc/issue.net
 {% endif %}
 
 # Subsistema SFTP
-Subsystem sftp /usr/lib/openssh/sftp-server
+Subsystem sftp internal-sftp

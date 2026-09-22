@@ -15,9 +15,9 @@
     - role: firewall_nftables
       tags: [firewall]
 
+    - role: ssh_hardening
+      tags: [ssh]
     # Pendiente
-    # - role: ssh_hardening
-    #   tags: [ssh]
     # - role: auditd
     #   tags: [auditoria]
     # - role: hardening_cis
