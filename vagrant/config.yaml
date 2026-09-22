@@ -2,6 +2,10 @@
 #  Inventario de la infraestructura para CDG
 # =============================================================
 
+# Repo en Git
+repo_url: "git@github.com:sancarcast/ORT-SeguridadenRedesyDatos-OBG.git"
+repo_dir: "ORT-SeguridadenRedesyDatos-OBG"
+
 # Redes de la maqueta.
 #  - mgmt: host-only. Plano de gestion. Unica alcanzable desde el host.
 #  - soc / app / dmz: internal (aisladas). Solo se comunican via OPNsense.

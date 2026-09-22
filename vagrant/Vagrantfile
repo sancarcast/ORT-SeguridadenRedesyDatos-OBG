@@ -3,10 +3,28 @@
 # =============================================================
 
 require 'yaml'
+require 'fileutils'
 
 CONFIG = YAML.load_file(File.join(File.dirname(__FILE__), 'config.yaml'))
-CTRL_PUBKEY_PATH = File.join(File.dirname(__FILE__), 'files', 'ctrl01_ed25519.pub')
-CTRL_PUBKEY = File.exist?(CTRL_PUBKEY_PATH) ? File.read(CTRL_PUBKEY_PATH).strip : nil
+
+# Claves nodo de control de vagrant/claves
+
+CLAVES_DIR = File.join(File.dirname(__FILE__), 'claves')
+CLAVE_ANSIBLE = File.join(CLAVES_DIR, 'ctrl01_ansible')
+CLAVE_DEPLOY  = File.join(CLAVES_DIR, 'ctrl01_deploy')
+
+FileUtils.mkdir_p(CLAVES_DIR)
+[[CLAVE_ANSIBLE, 'ansible@ctrl01'], [CLAVE_DEPLOY, 'deploy-key@ctrl01']].each do |ruta, comentario|
+  next if File.exist?(ruta)
+  ok = system(%Q{ssh-keygen -q -t ed25519 -N "" -C "#{comentario}" -f "#{ruta}"})
+  abort("No se pudo generar la clave #{ruta}. Verificar que ssh-keygen este disponible.") unless ok
+  puts "==> Clave generada: #{ruta}"
+end
+
+CTRL_PUBKEY = File.read("#{CLAVE_ANSIBLE}.pub").strip
+
+REPO_URL = CONFIG['repo_url']
+REPO_DIR = CONFIG['repo_dir'] || 'ORT-SeguridadenRedesyDatos-OBG'
 
 VAGRANTFILE_API_VERSION = "2"
 
@@ -68,6 +86,38 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
           SHELL
       end
 
+     # Entrega claves generadas en el host
+
+        node.vm.provision "file", source: CLAVE_ANSIBLE, destination: "/home/vagrant/.ssh/id_ed25519"
+        node.vm.provision "file", source: CLAVE_DEPLOY,  destination: "/home/vagrant/.ssh/id_ed25519_github"
+
+     # Permisos, config de Gihub y clonado del repo
+
+        node.vm.provision "shell",
+          name: "claves y repo del nodo de control",
+          privileged: false,
+          inline: <<-SHELL
+            set -e
+            chmod 700 ~/.ssh
+            chmod 600 ~/.ssh/id_ed25519 ~/.ssh/id_ed25519_github
+
+            # La deploy key se usa solo para github y la de Ansible para las vms
+            cat > ~/.ssh/config <<'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519_github
+    IdentitiesOnly yes
+    StrictHostKeyChecking accept-new
+EOF
+            chmod 600 ~/.ssh/config
+
+            if [ -n "#{REPO_URL}" ] && [ ! -d ~/#{REPO_DIR} ]; then
+              git clone "#{REPO_URL}" ~/#{REPO_DIR}
+            fi
+          SHELL
+      end
+
       node.vm.provider "virtualbox" do |vb|
         vb.name   = vm['name']
         vb.memory = vm['ram']
@@ -79,12 +129,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # Sin audio ni USB
         vb.customize ["modifyvm", :id, "--audio-enabled", "off"]
         vb.customize ["modifyvm", :id, "--usb", "off"]
-
-        # Reloj sincronizado con el host para Kerberos (FreeIPA)
-        # y para los de eventos en el SIEM.
-        vb.customize ["guestproperty", "set", :id,
-                      "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold",
-                      "1000"]
       end
 
     end
