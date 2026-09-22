@@ -84,7 +84,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             apt-get update -qq
             apt-get install -y -qq ansible ansible-lint git
           SHELL
-      end
 
      # Entrega claves generadas en el host
 
