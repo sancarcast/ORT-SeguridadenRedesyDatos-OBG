@@ -6,6 +6,7 @@
 - name: Endurecimiento base de la infraestructura
   hosts: all
   become: true
+  force_handlers: true
 
   roles:
     - role: base
