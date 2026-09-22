@@ -1,0 +1,5 @@
+---
+# Variables para todas las maquinas
+
+# puerto ssh de administracion
+ansible_port: 7664
