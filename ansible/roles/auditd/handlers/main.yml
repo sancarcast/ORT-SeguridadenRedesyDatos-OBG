@@ -1,4 +1,4 @@
----.
+---
 - name: recargar reglas de auditd
   ansible.builtin.command:
     cmd: augenrules --load
