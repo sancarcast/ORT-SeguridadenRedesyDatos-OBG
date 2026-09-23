@@ -180,6 +180,14 @@ ansible all -m ping
 ansible all -a "ip route get 1.1.1.1"     # sale por su gateway .254
 ansible all -a "chronyc sources"          # sincroniza contra .254
 ```
+
+Verificar auditd:
+
+```bash
+ansible all -a "auditctl -s" -b | grep enabled
+ansible all -m shell -a "auditctl -l | wc -l" -b
+```
+
 ---
 
 ## 6. no olvidarse
@@ -194,6 +202,11 @@ ssh-keygen -f ~/.ssh/known_hosts -R <ip>
 - **Handlers de Ansible**: si una tarea falla, los handlers pendientes se descartan y el
   servicio queda con la configuracion vieja
 - **Secretos**: nada de contrasenas en el repositorio sin cifrar
+- **Actualizaciones automaticas desactivadas**: el rol base deshabilita
+  unattended-upgrades. Los hosts no se parchean solos, hay que hacerlo
+  con Ansible
+- **auditd desde el arranque**: el rol cambia los parametros de grub pero toma efecto
+  recien despues de reiniciar el host
 
 ---
 
@@ -202,6 +215,10 @@ ssh-keygen -f ~/.ssh/known_hosts -R <ip>
 1. `base` - hora, ruta por defecto, resolucion de nombres **(quitar resolucion de nombres cuando pongamos el server dns)**
 2. `firewall_nftables` - firewall local
 3. `ssh_hardening` - endurecimiento de SSH
+4. `auditd` - auditoria del sistema con reglas mapeadas a MITRE ATT&CK
+
+Si se aplica el firewall antes que base, el host queda aislado: la ruta todavia apunta
+al NAT y el firewall bloquea esa interfaz.
 
 ---
 
