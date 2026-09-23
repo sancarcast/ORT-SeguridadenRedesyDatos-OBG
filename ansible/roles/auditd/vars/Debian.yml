@@ -3,3 +3,6 @@ auditd_paquetes:
   - auditd
   - audispd-plugins
 auditd_grub_update_cmd: "update-grub"
+auditd_conf_firewall: "/etc/nftables.conf"
+auditd_dir_sshd_extra: "/etc/ssh/sshd_config.d"
+auditd_conf_chrony: "/etc/chrony/chrony.conf"

@@ -41,8 +41,6 @@
 ## -------------------------------------------------------------
 -w /etc/sudoers -p wa -k T1548.003-sudo
 -w /etc/sudoers.d/ -p wa -k T1548.003-sudo
--w /var/log/sudo.log -p wa -k T1548.003-sudo
-
 
 ## -------------------------------------------------------------
 ##  T1548.001 - Abuso de binarios setuid y setgid
@@ -65,7 +63,7 @@
 ##  T1562.001 - Deshabilitar o modificar herramientas de defensa
 ## -------------------------------------------------------------
 -w /etc/ssh/sshd_config -p wa -k T1562.001-defensas
--w /etc/ssh/sshd_config.d/ -p wa -k T1562.001-defensas
+-w {{ auditd_dir_sshd_extra }}/ -p wa -k T1562.001-defensas
 -w /etc/pam.d/ -p wa -k T1562.001-defensas
 -w /etc/security/ -p wa -k T1562.001-defensas
 -w /etc/audit/ -p wa -k T1562.001-defensas
@@ -76,8 +74,7 @@
 ## -------------------------------------------------------------
 ##  T1562.004 - Deshabilitar o modificar el firewall del sistema
 ## -------------------------------------------------------------
--w /etc/nftables.conf -p wa -k T1562.004-firewall
--w /etc/sysconfig/nftables.conf -p wa -k T1562.004-firewall
+-w {{ auditd_conf_firewall }} -p wa -k T1562.004-firewall
 -w /usr/sbin/nft -p x -k T1562.004-firewall
 
 
@@ -112,9 +109,7 @@
 -a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k T1070-reloj
 -a always,exit -F arch=b32 -S adjtimex,settimeofday,clock_settime -k T1070-reloj
 -w /etc/localtime -p wa -k T1070-reloj
--w /etc/chrony/chrony.conf -p wa -k T1070-reloj
--w /etc/chrony.conf -p wa -k T1070-reloj
-
+-w {{ auditd_conf_chrony }} -p wa -k T1070-reloj
 
 ## -------------------------------------------------------------
 ##  T1565.001 - Manipulacion de datos almacenados

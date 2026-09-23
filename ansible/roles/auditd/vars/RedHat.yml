@@ -2,3 +2,6 @@
 auditd_paquetes:
   - audit
 auditd_grub_update_cmd: "grub2-mkconfig -o /boot/grub2/grub.cfg"
+auditd_conf_firewall: "/etc/sysconfig/nftables.conf"
+auditd_dir_sshd_extra: "/etc/ssh/sshd_config.d"
+auditd_conf_chrony: "/etc/chrony.conf"
