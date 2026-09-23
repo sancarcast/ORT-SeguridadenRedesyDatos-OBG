@@ -1,0 +1,4 @@
+---
+auditd_paquetes:
+  - audit
+auditd_grub_update_cmd: "grub2-mkconfig -o /boot/grub2/grub.cfg"

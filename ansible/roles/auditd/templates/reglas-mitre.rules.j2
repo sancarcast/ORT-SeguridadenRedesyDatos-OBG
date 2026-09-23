@@ -1,0 +1,131 @@
+## =============================================================
+##  Reglas de auditoria - gestionado por Ansible (rol auditd)
+## =============================================================
+
+## Limpia las reglas previas antes de cargarlas
+-D
+
+## Cola de eventos del nucleo
+-b {{ auditd_backlog_limit }}
+
+## Comportamiento ante fallo: registrar en el nucleo
+-f {{ auditd_failure_mode }}
+
+## No auditar los propios procesos de auditd
+-a never,exit -F arch=b64 -S all -F exe=/sbin/auditd
+-a never,exit -F arch=b64 -S all -F exe=/usr/sbin/auditd
+
+# Principales reglas de mitreattack
+## -------------------------------------------------------------
+##  T1003.008 - Volcado de credenciales: /etc/passwd y /etc/shadow
+## -------------------------------------------------------------
+-w /etc/shadow -p wra -k T1003.008-credenciales
+-w /etc/gshadow -p wra -k T1003.008-credenciales
+-w /etc/security/opasswd -p wra -k T1003.008-credenciales
+
+
+## -------------------------------------------------------------
+##  T1098 - Manipulacion de cuentas
+##  T1136 - Creacion de cuentas
+## -------------------------------------------------------------
+-w /etc/passwd -p wa -k T1098-cuentas
+-w /etc/group -p wa -k T1098-cuentas
+-w /usr/sbin/useradd -p x -k T1136-alta-cuenta
+-w /usr/sbin/usermod -p x -k T1098-cuentas
+-w /usr/sbin/userdel -p x -k T1098-cuentas
+-w /usr/sbin/groupadd -p x -k T1136-alta-cuenta
+
+
+## -------------------------------------------------------------
+##  T1548.003 - Abuso de sudo
+## -------------------------------------------------------------
+-w /etc/sudoers -p wa -k T1548.003-sudo
+-w /etc/sudoers.d/ -p wa -k T1548.003-sudo
+-w /var/log/sudo.log -p wa -k T1548.003-sudo
+
+
+## -------------------------------------------------------------
+##  T1548.001 - Abuso de binarios setuid y setgid
+## -------------------------------------------------------------
+-a always,exit -F arch=b64 -S execve -C uid!=euid -F euid=0 -k T1548.001-setuid
+-a always,exit -F arch=b32 -S execve -C uid!=euid -F euid=0 -k T1548.001-setuid
+
+
+## -------------------------------------------------------------
+##  T1078.003 - Uso de cuentas locales privilegiadas
+## -------------------------------------------------------------
+-w /bin/su -p x -k T1078.003-cambio-identidad
+-w /usr/bin/sudo -p x -k T1078.003-cambio-identidad
+-w /var/log/lastlog -p wa -k T1078-sesiones
+-w /var/log/wtmp -p wa -k T1078-sesiones
+-w /var/log/btmp -p wa -k T1078-sesiones
+
+
+## -------------------------------------------------------------
+##  T1562.001 - Deshabilitar o modificar herramientas de defensa
+## -------------------------------------------------------------
+-w /etc/ssh/sshd_config -p wa -k T1562.001-defensas
+-w /etc/ssh/sshd_config.d/ -p wa -k T1562.001-defensas
+-w /etc/pam.d/ -p wa -k T1562.001-defensas
+-w /etc/security/ -p wa -k T1562.001-defensas
+-w /etc/audit/ -p wa -k T1562.001-defensas
+-w /usr/sbin/auditctl -p x -k T1562.001-defensas
+-w /usr/sbin/augenrules -p x -k T1562.001-defensas
+
+
+## -------------------------------------------------------------
+##  T1562.004 - Deshabilitar o modificar el firewall del sistema
+## -------------------------------------------------------------
+-w /etc/nftables.conf -p wa -k T1562.004-firewall
+-w /etc/sysconfig/nftables.conf -p wa -k T1562.004-firewall
+-w /usr/sbin/nft -p x -k T1562.004-firewall
+
+
+## -------------------------------------------------------------
+##  T1547.006 - Modulos del nucleo
+## -------------------------------------------------------------
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -k T1547.006-modulos
+-a always,exit -F arch=b32 -S init_module,finit_module,delete_module -k T1547.006-modulos
+-w /usr/sbin/insmod -p x -k T1547.006-modulos
+-w /usr/sbin/rmmod -p x -k T1547.006-modulos
+-w /usr/sbin/modprobe -p x -k T1547.006-modulos
+
+
+## -------------------------------------------------------------
+##  T1543.002 - Servicios de systemd
+## -------------------------------------------------------------
+-w /etc/systemd/system/ -p wa -k T1543.002-servicios
+-w /lib/systemd/system/ -p wa -k T1543.002-servicios
+
+
+## -------------------------------------------------------------
+##  T1070.002 - Borrado de registros del sistema
+## -------------------------------------------------------------
+-w /var/log/audit/ -p wa -k T1070.002-borrado-logs
+-w /var/log/journal/ -p wa -k T1070.002-borrado-logs
+-a always,exit -F arch=b64 -S unlink,unlinkat,rename,renameat -F dir=/var/log -F auid>=1000 -F auid!=unset -k T1070.002-borrado-logs
+
+
+## -------------------------------------------------------------
+##  T1070 - Alteracion del reloj del sistema
+## -------------------------------------------------------------
+-a always,exit -F arch=b64 -S adjtimex,settimeofday,clock_settime -k T1070-reloj
+-a always,exit -F arch=b32 -S adjtimex,settimeofday,clock_settime -k T1070-reloj
+-w /etc/localtime -p wa -k T1070-reloj
+-w /etc/chrony/chrony.conf -p wa -k T1070-reloj
+-w /etc/chrony.conf -p wa -k T1070-reloj
+
+
+## -------------------------------------------------------------
+##  T1565.001 - Manipulacion de datos almacenados
+## -------------------------------------------------------------
+-w /etc/hosts -p wa -k T1565.001-resolucion
+-w /etc/resolv.conf -p wa -k T1565.001-resolucion
+{% if auditd_ruleset_inmutable %}
+
+
+## -------------------------------------------------------------
+##  Ruleset inmutable: no admite modificaciones hasta el proximo reinicio
+## -------------------------------------------------------------
+-e 2
+{% endif %}

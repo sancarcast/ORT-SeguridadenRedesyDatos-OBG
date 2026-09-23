@@ -17,8 +17,6 @@
 
     - role: ssh_hardening
       tags: [ssh]
-    # Pendiente
-    # - role: auditd
-    #   tags: [auditoria]
-    # - role: hardening_cis
-    #   tags: [cis]
+
+    - role: auditd
+      tags: [auditoria]

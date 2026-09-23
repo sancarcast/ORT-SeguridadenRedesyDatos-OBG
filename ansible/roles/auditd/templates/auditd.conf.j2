@@ -1,0 +1,30 @@
+#
+# auditd.conf - gestionado por Ansible (rol auditd)
+
+log_file = /var/log/audit/audit.log
+log_format = ENRICHED
+log_group = adm
+write_logs = yes
+freq = 50
+flush = INCREMENTAL_ASYNC
+
+# --- Rotacion y retencion ---
+max_log_file = {{ auditd_max_log_file }}
+num_logs = {{ auditd_num_logs }}
+max_log_file_action = {{ auditd_max_log_file_action }}
+
+# --- Espacio en disco ---
+# Aviso temprano: se registra en syslog para que wazuh lo detecte
+space_left = {{ auditd_space_left }}
+space_left_action = {{ auditd_space_left_action }}
+
+# El sistema se detiene antes que operar sin registrar
+admin_space_left = {{ auditd_admin_space_left }}
+admin_space_left_action = {{ auditd_admin_space_left_action }}
+disk_full_action = {{ auditd_disk_full_action }}
+disk_error_action = {{ auditd_disk_error_action }}
+
+# --- Varios ---
+name_format = HOSTNAME
+verify_email = no
+local_events = yes

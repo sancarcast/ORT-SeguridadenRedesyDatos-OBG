@@ -1,0 +1,32 @@
+---
+# =============================================================
+#  Rol auditd
+# =============================================================
+
+# --- Retencion y tamano ---
+auditd_max_log_file: 8          # mb por archivo
+auditd_num_logs: 5
+
+# --- Comportamiento ante falta de espacio ---
+auditd_max_log_file_action: "keep_logs"
+
+# Aviso temprano
+auditd_space_left: 75           # mb
+auditd_space_left_action: "syslog"
+
+# El sistema se detiene antes que seguir operando
+auditd_admin_space_left: 50     # mb
+auditd_admin_space_left_action: "halt"
+auditd_disk_full_action: "halt"
+auditd_disk_error_action: "halt"
+
+# --- Parametros del subsistema ---
+auditd_backlog_limit: 8192      # eventos en cola del nucleo
+auditd_failure_mode: 1
+
+# --- Auditoria desde el arranque ---
+auditd_auditar_desde_arranque: true
+
+# --- Inmutabilidad del ruleset ---
+# cambiar a 2 en produccion
+auditd_ruleset_inmutable: false

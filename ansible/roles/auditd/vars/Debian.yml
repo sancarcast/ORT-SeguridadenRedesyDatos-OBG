@@ -1,0 +1,5 @@
+---
+auditd_paquetes:
+  - auditd
+  - audispd-plugins
+auditd_grub_update_cmd: "update-grub"
