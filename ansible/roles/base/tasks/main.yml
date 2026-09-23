@@ -49,6 +49,28 @@
 #  Paquetes
 # -------------------------------------------------------------
 
+- name: Esperar a que ningun otro proceso este usando apt
+  ansible.builtin.shell:
+    cmd: |
+      for i in $(seq 1 60); do
+        if flock -n /var/lib/dpkg/lock-frontend true 2>/dev/null \
+           && flock -n /var/lib/apt/lists/lock true 2>/dev/null; then
+          exit 0
+        fi
+        sleep 5
+      done
+      echo "apt sigue bloqueado tras 5 minutos" >&2
+      exit 1
+  changed_when: false
+  when: ansible_os_family == "Debian"
+  tags: always
+
+- name: Actualizar el indice de paquetes
+  ansible.builtin.apt:
+    update_cache: true
+  when: ansible_os_family == "Debian"
+  tags: always
+
 - name: Instalar los paquetes comunes
   ansible.builtin.package:
     name: "{{ base_common_packages + base_extra_packages }}"

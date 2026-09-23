@@ -12,6 +12,10 @@
     update_cache: true
     cache_valid_time: 3600
   when: ansible_os_family == "Debian"
+  register: auditd_apt_update
+  until: auditd_apt_update is succeeded
+  retires: 5
+  delay: 15
   tags: [auditoria, paquetes]
 
 - name: Instalar auditd
