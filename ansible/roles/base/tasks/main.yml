@@ -49,6 +49,20 @@
 #  Paquetes
 # -------------------------------------------------------------
 
+- name: Deshabilitar las actualizaciones automaticas
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    masked: true
+  loop:
+    - unattended-upgrades
+    - apt-daily.timer
+    - apt-daily-upgrade.timer
+  failed_when: false
+  when: ansible_os_family == "Debian"
+  tags: always
+
 - name: Esperar a que ningun otro proceso este usando apt
   ansible.builtin.shell:
     cmd: |
