@@ -22,6 +22,7 @@
   ansible.builtin.package:
     name: "{{ auditd_paquetes }}"
     state: present
+    update_cache: "{{ true if ansible_os_family == 'Debian' else omit }}"
   tags: [auditoria, paquetes]
 
 # -------------------------------------------------------------
