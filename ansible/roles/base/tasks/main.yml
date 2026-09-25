@@ -59,6 +59,8 @@
     - unattended-upgrades
     - apt-daily.timer
     - apt-daily-upgrade.timer
+    - apt-daily.service
+    - apt-daily-upgrade.service
   failed_when: false
   when: ansible_os_family == "Debian"
   tags: always
@@ -84,6 +86,10 @@
     name: "{{ base_common_packages + base_extra_packages }}"
     state: present
     update_cache: "{{ true if ansible_os_family == 'Debian' else omit }}"
+  register: base_instalacion
+  until: base_instalacion is succeeded
+  retries: 10
+  delay: 20
   tags: [base, paquetes]
 
 # -------------------------------------------------------------
