@@ -90,6 +90,7 @@
   ansible.builtin.package:
     name: "{{ base_common_packages + base_extra_packages }}"
     state: present
+    update_cache: "{{ true if ansible_os_family == 'Debian' else omit }}"
   tags: [base, paquetes]
 
 # -------------------------------------------------------------
