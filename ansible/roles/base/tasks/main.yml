@@ -82,7 +82,6 @@
 - name: Actualizar el indice de paquetes
   ansible.builtin.apt:
     update_cache: true
-    cache_valid_time: 3600
     lock_timeout: 120
   when: ansible_os_family == "Debian"
   tags: always
