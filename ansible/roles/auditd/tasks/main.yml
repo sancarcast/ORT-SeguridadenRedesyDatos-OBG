@@ -23,6 +23,10 @@
     name: "{{ auditd_paquetes }}"
     state: present
     update_cache: "{{ true if ansible_os_family == 'Debian' else omit }}"
+  register: auditd_instalacion
+  until: auditd_instalacion is succeeded
+  retries: 10
+  delay: 20
   tags: [auditoria, paquetes]
 
 # -------------------------------------------------------------
