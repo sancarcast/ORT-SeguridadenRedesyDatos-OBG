@@ -12,7 +12,7 @@ CONFIG = YAML.load_file(File.join(File.dirname(__FILE__), 'config.yaml'))
 ADMIN_PUBKEY_PATH = File.join(File.dirname(__FILE__), 'files', 'admin.pub')
 
 unless File.exist?(ADMIN_PUBKEY_PATH)
-  abort("Falta #{ADMIN_PUBKEY_PATH}.)
+  abort("Falta #{ADMIN_PUBKEY_PATH}.")
 end
 
 ADMIN_PUBKEY = File.read(ADMIN_PUBKEY_PATH).strip
