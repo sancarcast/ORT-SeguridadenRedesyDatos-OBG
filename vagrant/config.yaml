@@ -108,16 +108,6 @@ vms:
     rol: "NetBird self-hosted - VPN overlay con ACLs y SSO"
 
    # ---------- Zona MGMT ----------
-  - name: ctrl01
-    box: "debian/bookworm64"
-    ram: 2048
-    cpus: 2
-    zona: mgmt
-    ip_mgmt: "10.10.10.10"
-    ip_zona: "10.10.10.10"
-    rol: "Nodo de cntrol, con Ansible, GIT y herramientas de deploy"
-
-
   - name: bastion01
     box: "debian/bookworm64"
     ram: 4096
