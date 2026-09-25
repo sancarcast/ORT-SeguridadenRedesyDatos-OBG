@@ -79,13 +79,6 @@
   when: ansible_os_family == "Debian"
   tags: always
 
-- name: Actualizar el indice de paquetes
-  ansible.builtin.apt:
-    update_cache: true
-    lock_timeout: 120
-  when: ansible_os_family == "Debian"
-  tags: always
-
 - name: Instalar los paquetes comunes
   ansible.builtin.package:
     name: "{{ base_common_packages + base_extra_packages }}"
