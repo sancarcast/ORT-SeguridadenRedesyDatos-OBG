@@ -3,28 +3,19 @@
 # =============================================================
 
 require 'yaml'
-require 'fileutils'
 
 CONFIG = YAML.load_file(File.join(File.dirname(__FILE__), 'config.yaml'))
 
-# Claves nodo de control de vagrant/claves
+# Clave publica del admin
+# Ansible ejecuta desde WSL. Su clave publica se autoriza en todas las VMs
 
-CLAVES_DIR = File.join(File.dirname(__FILE__), 'claves')
-CLAVE_ANSIBLE = File.join(CLAVES_DIR, 'ctrl01_ansible')
-CLAVE_DEPLOY  = File.join(CLAVES_DIR, 'ctrl01_deploy')
+ADMIN_PUBKEY_PATH = File.join(File.dirname(__FILE__), 'files', 'admin.pub')
 
-FileUtils.mkdir_p(CLAVES_DIR)
-[[CLAVE_ANSIBLE, 'ansible@ctrl01'], [CLAVE_DEPLOY, 'deploy-key@ctrl01']].each do |ruta, comentario|
-  next if File.exist?(ruta)
-  ok = system(%Q{ssh-keygen -q -t ed25519 -N "" -C "#{comentario}" -f "#{ruta}"})
-  abort("No se pudo generar la clave #{ruta}. Verificar que ssh-keygen este disponible.") unless ok
-  puts "==> Clave generada: #{ruta}"
+unless File.exist?(ADMIN_PUBKEY_PATH)
+  abort("Falta #{ADMIN_PUBKEY_PATH}.)
 end
 
-CTRL_PUBKEY = File.read("#{CLAVE_ANSIBLE}.pub").strip
-
-REPO_URL = CONFIG['repo_url']
-REPO_DIR = CONFIG['repo_dir'] || 'ORT-SeguridadenRedesyDatos-OBG'
+ADMIN_PUBKEY = File.read(ADMIN_PUBKEY_PATH).strip
 
 VAGRANTFILE_API_VERSION = "2"
 
@@ -59,77 +50,28 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
                         netmask: "255.255.255.0",
                         virtualbox__intnet: vm['zona']
       end
-	  
-      # Autoriza la clave publica del nodo de control para que Ansible pueda conectarse.
-      if CTRL_PUBKEY && vm['name'] != 'ctrl01'
-        node.vm.provision "shell",
-          name: "autorizar clave de ctrl01",
-          privileged: false,
-          inline: <<-SHELL
-            mkdir -p ~/.ssh && chmod 700 ~/.ssh
-            touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
-            grep -qxF '#{CTRL_PUBKEY}' ~/.ssh/authorized_keys || echo '#{CTRL_PUBKEY}' >> ~/.ssh/authorized_keys
-          SHELL
-      end
 
-      # --- Herramientas para ctrl01 ---
-      if vm['name'] == 'ctrl01'
-        node.vm.provision "shell",
-          name: "herramientas del nodo de control",
-          privileged: true,
-          inline: <<-SHELL
-            command -v ansible >/dev/null 2>&1 && command -v git >/dev/null 2>&1 && exit 0
-
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get update -qq
-            apt-get install -y -qq ansible ansible-lint git
-          SHELL
-
-     # Entrega claves generadas en el host
-
-        node.vm.provision "file", source: CLAVE_ANSIBLE, destination: "/home/vagrant/.ssh/id_ed25519"
-        node.vm.provision "file", source: CLAVE_DEPLOY,  destination: "/home/vagrant/.ssh/id_ed25519_github"
-
-     # Permisos, config de Gihub y clonado del repo
-
-        node.vm.provision "shell",
-          name: "claves y repo del nodo de control",
-          privileged: false,
-          inline: <<-SHELL
-            set -e
-            chmod 700 ~/.ssh
-            chmod 600 ~/.ssh/id_ed25519 ~/.ssh/id_ed25519_github
-
-            # La deploy key se usa solo para github y la de Ansible para las vms
-            cat > ~/.ssh/config <<'EOF'
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile ~/.ssh/id_ed25519_github
-    IdentitiesOnly yes
-    StrictHostKeyChecking accept-new
-EOF
-            chmod 600 ~/.ssh/config
-
-            if [ -n "#{REPO_URL}" ] && [ ! -d ~/#{REPO_DIR} ]; then
-              git clone "#{REPO_URL}" ~/#{REPO_DIR}
-            fi
-          SHELL
-      end
+  # Autorizar clave de WSL 
+      node.vm.provision "shell",
+        name: "autorizar la clave de wsl",
+        privileged: false,
+        inline: <<-SHELL
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          touch ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys
+          grep -qxF '#{ADMIN_PUBKEY}' ~/.ssh/authorized_keys || echo '#{ADMIN_PUBKEY}' >> ~/.ssh/authorized_keys
+        SHELL
 
       node.vm.provider "virtualbox" do |vb|
         vb.name   = vm['name']
         vb.memory = vm['ram']
         vb.cpus   = vm['cpus'] || CONFIG['defaults']['cpus']
 
-        # Descripcion visible en la GUI de VirtualBox
         vb.customize ["modifyvm", :id, "--description", vm['rol']]
 
         # Sin audio ni USB
         vb.customize ["modifyvm", :id, "--audio-enabled", "off"]
         vb.customize ["modifyvm", :id, "--usb", "off"]
       end
-
     end
   end
 end
