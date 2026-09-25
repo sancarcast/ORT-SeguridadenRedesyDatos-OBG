@@ -15,7 +15,9 @@ En el host Windows:
 En WSL:
 
 - git, gnupg, ansible-core
+- La coleccion community.general (`ansible-galaxy collection install community.general`), ansible-core no la trae y los roles la usan
 - La clave privada GPG del integrante
+- Un par de claves ssh para entrar a las vms (distinto del que usamos para github)
 
 ISO a descargar
 
@@ -28,8 +30,13 @@ ISO a descargar
 
 - El repositorio se edita en WSL
 - Vagrant corre en Windows, desde su propio directorio
+- Ansible se corre desde WSL, no hay maquina orquestadora dentro de la maqueta
 
-La carpeta `claves/` nunca va al repositorio solo esta en el host windows
+Para pasar los archivos al directorio de Vagrant sin que Windows les meta .txt:
+
+```bash
+cp vagrant/{Vagrantfile,config.yaml} /mnt/c/<directorio-vagrant>/
+```
 
 ---
 
@@ -75,24 +82,18 @@ openssl rand -base64 32 | gpg --encrypt --armor --trust-model always \
 
 ```bash
 cd ansible
-ansible-vault edit inventory/host_vars/srv01/vault.yml --vault-password-file vault-pass.sh
-ansible-vault view inventory/host_vars/srv01/vault.yml --vault-password-file vault-pass.sh
+ansible-vault edit inventory/host_vars/srv01/vault.yml
+ansible-vault view inventory/host_vars/srv01/vault.yml
 ```
 
-El script `vault-pass.sh` descifra `vault-pass.gpg` y le entrega el resultado a Ansible. Pide la frase de GPG en lugar de la del vault
+El script `vault-pass.sh` descifra `vault-pass.gpg` y le entrega el resultado a Ansible. Pide la frase de GPG en lugar de la del vault. Va configurado en ansible.cfg:
 
-**Correr playbooks que usan secretos en ctrl01:**
-
-ctrl01 NO tiene claves GPG porque es una maquina descartable y no debe guardar
-secretos. Entonces la contrasena se descifra en WSL y se pega:
-
-```bash
-# en WSL
-gpg -d ansible/vault-pass.gpg | clip.exe
-
-# en ctrl01
-ansible-playbook playbooks/XX.yml --ask-vault-pass
+```ini
+vault_password_file = vault-pass.sh
 ```
+
+Como ansible corre en el mismo WSL donde esta la clave privada GPG, el descifrado es
+transparente y no hay que pegar nada a mano
 
 **De momento los playbooks no piden contrasena. Pendiente configurarlo**
 
@@ -135,30 +136,36 @@ VBoxManage modifyvm "rtr01" --nic5 hostonly --hostonlyadapter5 "VirtualBox Host-
 9. Recargar los alias con Firewall > Aliases > Actions > Update
 10. Guardar un backup del router en `firewall/opnsense/`
 
+**Ojo con el punto 8**: las tres reglas van en las TRES interfaces. Si a alguna zona le
+falta la de salida web o la de DNS, los hosts de esa zona no bajan paquetes y el error
+aparece en apt, no en el router. Ya nos paso con OPT1 y OPT3 despues de restaurar un backup
+
 ---
 
 ## 4. Levantar las maquinas
+
+Primero, la clave publica del admin tiene que estar en el directorio de vagrant, el
+Vagrantfile la lee de ahi y la instala en todas las vms:
+
+```bash
+cp ~/.ssh/id_ansible.pub /mnt/c/<directorio-vagrant>/files/admin.pub
+```
 
 Desde el directorio de Vagrant en Windows:
 
 ```
 vagrant status
-```
-
-La primera vez genera las claves del nodo de control en `claves/`. Hay que cargar `claves/ctrl01_deploy.pub` en GitHub > el repo > Settings > Deploy keys
-
-```
 vagrant up
 ```
 
-Levanta las 10 vms, instala la clave publica de ctrl01 en todas, y en ctrl01 ademas
-instala las herramientas, configura SSH para GitHub y clona el repo
+Levanta las 9 vms e instala la clave publica del admin en todas. Las vms quedan sin
+hardenizar, eso lo hace ansible despues
 
 ---
 
 ## 5. Configurar con Ansible
 
-Desde ctrl01:
+Desde WSL, en la carpeta ansible del repo:
 
 La primera vez o despues de recrear maquinas, hay que indicar el puerto 22: las vms
 nuevas todavia no tienen el puerto 7664 (elegido por nosotros) configurado
@@ -171,6 +178,13 @@ De ahi en mas, sin el `-e`:
 
 ```bash
 ansible-playbook playbooks/01-hardening-base.yml
+```
+
+Antes de correr los playbooks conviene chequear que todas las zonas tengan salida, sino
+el error salta despues en apt y cuesta encontrarlo:
+
+```bash
+ansible all -m shell -a "timeout 5 getent hosts deb.debian.org >/dev/null && echo OK || echo SIN-SALIDA"
 ```
 
 Verificar:
@@ -188,11 +202,14 @@ ansible all -a "auditctl -s" -b | grep enabled
 ansible all -m shell -a "auditctl -l | wc -l" -b
 ```
 
+Idempotencia: correr el playbook dos veces seguidas, la segunda tiene que dar changed=0
+en las 9 maquinas. Esa salida va a docs/evidencias/
+
 ---
 
 ## 6. no olvidarse
 
-- **Maquina recreada**: hay que borrar su entrada de `known_hosts` en ctrl01, sino SSH
+- **Maquina recreada**: hay que borrar su entrada de `known_hosts` en WSL, sino SSH
   aborta la sesion por cambio de clave de host:
 
 ```bash
@@ -207,6 +224,10 @@ ssh-keygen -f ~/.ssh/known_hosts -R <ip>
   con Ansible
 - **auditd desde el arranque**: el rol cambia los parametros de grub pero toma efecto
   recien despues de reiniciar el host
+- **rtr01 primero**: es lo primero que se prende y lo ultimo que se apaga. Sin el las vms
+  no tienen salida ni hora. Y nunca guardar su estado, siempre apagado completo, sino
+  vuelve con la hora vieja y se la pasa a todas
+- **Backup del router**: cada vez que se toca una regla o un alias, exportar y commitear
 
 ---
 
@@ -226,6 +247,8 @@ al NAT y el firewall bloquea esa interfaz.
 
 ```
 ansible/          playbooks, roles e inventario
+docs/adr/         decisiones de arquitectura y por que se tomaron
+docs/evidencias/  salidas de comandos que respaldan el informe
 firewall/opnsense/ backup de la configuracion del firewall
 vagrant/          Vagrantfile y config.yaml
 gpg/              claves publicas nuestras
