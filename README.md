@@ -97,6 +97,16 @@ transparente y no hay que pegar nada a mano
 
 **De momento los playbooks no piden contrasena. Pendiente configurarlo**
 
+**Si clonas el repo**
+
+El vault-pass.gpg del repo esta cifrado para nuestras claves, no vas a poder
+descifrarlo. Tampoco los archivos vault.yml. Hay que empezar de cero:
+
+1. Generar tu clave GPG
+2. Borrar ansible/vault-pass.gpg y generar uno nuevo cifrado para tu clave
+3. Borrar los inventory/host_vars/*/vault.yml, no se pueden recuperar
+4. Volver a crear los secretos que hagan falta con ansible-vault
+
 ---
 
 ## 3. Instalacion OPNsense
