@@ -6,7 +6,7 @@
 
 - name: reiniciar auditd
   ansible.builtin.command:
-    cmd: /usr/sbin/service auditd restart
+    cmd: systemctl kill -s SIGHUP auditd
   changed_when: true
 
 - name: actualizar grub
