@@ -31,7 +31,8 @@ ssh_client_alive_interval: 300
 ssh_client_alive_count_max: 2       
 ssh_login_grace_time: 30            
 ssh_max_auth_tries: 3
-ssh_max_sessions: 4
+ssh_max_sessions: 2
+ssh_log_level: "VERBOSE"
 
 # --- Reenvios ---
 ssh_allow_agent_forwarding: "no"
@@ -40,11 +41,6 @@ ssh_x11_forwarding: "no"
 
 # --- Banner ---
 ssh_banner_habilitado: true
-
-# --- Origenes autorizados (solo modo produccion) ---
-# En produccion, cada tipo de cuenta se restringe a su origen
-ssh_origen_ansible: "10.10.10.10"     # ctrl01
-ssh_origen_admins: "10.10.10.42"      # bastion01
 
 # --- Cuenta de automatizacion ---
 ssh_usuario_ansible: "ansible"
