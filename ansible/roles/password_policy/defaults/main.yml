@@ -1,0 +1,45 @@
+---
+# =========================
+#  Rol password_policy 
+# =========================
+
+
+# --- Caducidad en dias ---
+password_max_dias: 180
+password_min_dias: 1
+
+password_aviso_dias: 7 
+password_inactivo_dias: 3
+
+# --- Calidad ---
+password_longitud_minima: 15
+
+# Caracteres distintos respecto de la contrasena anterior
+password_difok: 5
+
+# Repeticiones consecutivas del mismo caracter
+password_maxrepeat: 3
+
+# Caracteres consecutivos de la misma clase
+password_maxsequence: 4
+
+# Verificacion contra el diccionario del sistema
+password_dictcheck: 1
+
+# Impide que la contrasena contenga el nombre de usuario
+password_usercheck: 1
+
+# Numero de contrasenas anteriores recordadas
+password_recordar: 5
+
+# --- Permisos por defecto ---
+# 027 propietario rw, grupo r, el resto nada
+password_umask: "027"
+
+# --- Aplicacion a cuentas existentes ---
+password_aplicar_a_existentes: false
+
+# Cuentas que nunca deben recibir caducidad
+password_cuentas_exentas:
+  - root
+  - vagrant

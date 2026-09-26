@@ -23,3 +23,6 @@
 
     - role: sysctl_hardening
       tags: [sysctl]
+
+    - role: password_policy
+      tags: [contrasenas]

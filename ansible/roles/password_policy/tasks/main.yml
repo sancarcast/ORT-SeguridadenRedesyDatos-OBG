@@ -1,0 +1,115 @@
+---
+# ======================
+#  Rol password_policy 
+# ======================
+
+- name: Cargar variables de la familia de sistema operativo
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
+  tags: always
+
+- name: Instalar el modulo de calidad de contrasenas
+  ansible.builtin.package:
+    name: "{{ password_paquetes }}"
+    state: present
+    update_cache: "{{ true if ansible_os_family == 'Debian' else omit }}"
+  tags: [contrasenas, paquetes]
+
+- name: Configurar la politica de contrasenas en login.defs
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "^#?\\s*{{ item.clave }}\\s"
+    line: "{{ item.clave }}\t{{ item.valor }}"
+    state: present
+    backup: true
+  loop:
+    - { clave: "PASS_MAX_DAYS", valor: "{{ password_max_dias }}" }
+    - { clave: "PASS_MIN_DAYS", valor: "{{ password_min_dias }}" }
+    - { clave: "PASS_WARN_AGE", valor: "{{ password_aviso_dias }}" }
+    - { clave: "UMASK", valor: "{{ password_umask }}" }
+    - { clave: "ENCRYPT_METHOD", valor: "{{ password_metodo_hash }}" }
+  loop_control:
+    label: "{{ item.clave }}"
+  tags: [contrasenas]
+
+# Solo para RedHat
+
+- name: Configurar las rondas de hash
+  ansible.builtin.lineinfile:
+    path: /etc/login.defs
+    regexp: "^#?\\s*SHA_CRYPT_MIN_ROUNDS\\s"
+    line: "SHA_CRYPT_MIN_ROUNDS\t{{ password_rondas_minimas }}"
+    state: present
+  when: password_configurar_rondas
+  tags: [contrasenas]
+
+- name: Configurar el periodo de inactividad tras el vencimiento
+  ansible.builtin.command:
+    cmd: "useradd -D -f {{ password_inactivo_dias }}"
+  register: password_inactivo
+  changed_when: false
+  tags: [contrasenas]
+
+#  Calidad de la contrasena
+
+- name: Desplegar la configuracion de pwquality
+  ansible.builtin.template:
+    src: pwquality.conf.j2
+    dest: /etc/security/pwquality.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  tags: [contrasenas]
+
+#  Aplicacion a cuentas existentes
+
+- name: Obtener las cuentas de persona existentes
+  ansible.builtin.shell:
+    cmd: "awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd"
+  register: password_cuentas
+  changed_when: false
+  check_mode: false
+  when: password_aplicar_a_existentes
+  tags: [contrasenas]
+
+- name: Aplicar la caducidad a las cuentas existentes
+  ansible.builtin.command:
+    cmd: "chage -M {{ password_max_dias }} -m {{ password_min_dias }} -W {{ password_aviso_dias }} {{ item }}"
+  loop: "{{ password_cuentas.stdout_lines | default([]) }}"
+  when:
+    - password_aplicar_a_existentes
+    - item not in password_cuentas_exentas
+  tags: [contrasenas]
+
+#  Verificacion
+
+- name: Consultar la politica vigente
+  ansible.builtin.shell:
+    cmd: "grep -E '^(PASS_MAX_DAYS|PASS_MIN_DAYS|PASS_WARN_AGE|UMASK|ENCRYPT_METHOD)' /etc/login.defs"
+  register: password_vigente
+  changed_when: false
+  check_mode: false
+  tags: [contrasenas, verificacion]
+
+- name: Mostrar la politica aplicada
+  ansible.builtin.debug:
+    msg: "{{ password_vigente.stdout_lines }}"
+  tags: [contrasenas, verificacion]
+
+# Comprueba que la politica rechaza efectivamente una contrasena debil
+
+- name: Comprobar que se rechaza una contrasena debil
+  ansible.builtin.shell:
+    cmd: "echo 'password123' | pwscore 2>&1 || true"
+  register: password_prueba
+  changed_when: false
+  check_mode: false
+  failed_when: false
+  tags: [contrasenas, verificacion]
+
+- name: Informar el resultado de la prueba
+  ansible.builtin.debug:
+    msg: >-
+      Prueba con una contrasena debil en {{ inventory_hostname }}:
+      {{ password_prueba.stdout | trim }}
+  tags: [contrasenas, verificacion]

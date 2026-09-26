@@ -1,0 +1,8 @@
+---
+# AlmaLinux 9 usa SHA-512
+password_metodo_hash: "SHA512"
+password_configurar_rondas: true
+password_rondas_minimas: 65536
+
+password_paquetes:
+  - libpwquality

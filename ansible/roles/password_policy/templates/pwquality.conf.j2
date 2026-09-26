@@ -1,0 +1,22 @@
+# pwquality.conf - gestionado por Ansible (rol password_policy)
+
+# Longitud minima
+minlen = {{ password_longitud_minima }}
+
+# Caracteres que deben diferir de la contrasena anterior
+difok = {{ password_difok }}
+
+# Repeticiones consecutivas del mismo caracter
+maxrepeat = {{ password_maxrepeat }}
+
+# Caracteres consecutivos de la misma clase (abcd, 1234)
+maxsequence = {{ password_maxsequence }}
+
+# Rechaza contrasenas presentes en el diccionario del sistema
+dictcheck = {{ password_dictcheck }}
+
+# Rechaza contrasenas que contengan el nombre de usuario o el nombre real
+usercheck = {{ password_usercheck }}
+
+# La politica se aplica tambien cuando root cambia la contrasena de otro usuario
+enforce_for_root

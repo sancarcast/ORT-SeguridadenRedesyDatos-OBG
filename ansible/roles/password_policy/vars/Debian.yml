@@ -1,0 +1,8 @@
+---
+# Debian 12 usa yescrypt por defecto para el hash de contrasenas
+password_metodo_hash: "YESCRYPT"
+password_configurar_rondas: false
+
+password_paquetes:
+  - libpam-pwquality
+  - libpwquality-tools
