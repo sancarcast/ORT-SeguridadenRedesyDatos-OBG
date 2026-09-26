@@ -24,14 +24,22 @@
     backup: true
   tags: [sysctl, nucleo]
 
-# Los modulos ya cargados no se descargan solos
+# Primero consulta que modulos estan cargados y los descarga si se precisa
+
+- name: Consultar que modulos estan cargados
+  ansible.builtin.command:
+    cmd: lsmod
+  register: sysctl_lsmod
+  changed_when: false
+  check_mode: false
+  tags: [sysctl, nucleo]
+ 
 - name: Descargar los modulos que estuvieran activos
   ansible.builtin.command:
     cmd: "modprobe -r {{ item }}"
   loop: "{{ sysctl_modulos_deshabilitados + sysctl_modulos_almacenamiento }}"
-  register: sysctl_descarga
+  when: sysctl_lsmod.stdout is search('^' ~ (item | replace('-', '[-_]')) ~ '\\s', multiline=True)
   failed_when: false
-  changed_when: sysctl_descarga.rc == 0
   tags: [sysctl, nucleo]
 
 - name: Aplicar los cambios pendientes antes de verificar
