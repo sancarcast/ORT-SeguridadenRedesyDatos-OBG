@@ -1,6 +1,6 @@
 ---
 # =============================================================
-#  Hardening base
+#  Playbook para hardening
 # =============================================================
 
 - name: Endurecimiento base de la infraestructura
@@ -20,3 +20,6 @@
 
     - role: auditd
       tags: [auditoria]
+
+    - role: sysctl_hardening
+      tags: [sysctl]

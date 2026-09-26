@@ -1,0 +1,98 @@
+---
+# =============================================================
+#  Rol sysctl_hardening
+# =============================================================
+
+# --- Proteccion de informacion del nucleo ---
+sysctl_parametros_nucleo:
+  # Oculta las direcciones de memoria del nucleo en /proc
+  kernel.kptr_restrict: 2
+
+  # Restringe el acceso al buffer de mensajes del nucleo
+  kernel.dmesg_restrict: 1
+
+  # Impide que un proceso inspeccione la memoria de otro
+  kernel.yama.ptrace_scope: 1
+
+  # Desactiva la combinacion de teclas SysRq.
+  kernel.sysrq: 0
+
+  # Aleatoriza el espacio de direcciones de los procesos
+  kernel.randomize_va_space: 2
+
+  # Impide que usuarios sin privilegios carguen programas BPF
+  kernel.unprivileged_bpf_disabled: 1
+
+  # Endurece el compilador JIT de BPF contra ataques de pulverizacion
+  net.core.bpf_jit_harden: 2
+
+  # Impide la carga automatica de disciplinas de linea de TTY
+  dev.tty.ldisc_autoload: 0
+
+# --- Sistema de archivos ---
+sysctl_parametros_archivos:
+  # Impide crear enlaces simbolicos y duros hacia archivos de otros usuarios
+  fs.protected_symlinks: 1
+  fs.protected_hardlinks: 1
+
+  # Equivalente para FIFOs y archivos regulares en directorios con sticky bit
+  fs.protected_fifos: 2
+  fs.protected_regular: 2
+
+  # Impide que un programa con setuid genere volcados de memoria
+  fs.suid_dumpable: 0
+
+# --- Red ---
+sysctl_parametros_red:
+  # No se aceptan redirecciones ICMP
+  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.default.accept_redirects: 0
+  net.ipv4.conf.all.secure_redirects: 0
+  net.ipv4.conf.default.secure_redirects: 0
+  net.ipv6.conf.all.accept_redirects: 0
+  net.ipv6.conf.default.accept_redirects: 0
+
+  # Tampoco se envian, solo los routers deben hacerlo
+  net.ipv4.conf.all.send_redirects: 0
+  net.ipv4.conf.default.send_redirects: 0
+
+  # Enrutamiento por origen
+  net.ipv4.conf.all.accept_source_route: 0
+  net.ipv4.conf.default.accept_source_route: 0
+  net.ipv6.conf.all.accept_source_route: 0
+  net.ipv6.conf.default.accept_source_route: 0
+
+  # Estos hosts no reenvian trafico
+  net.ipv4.ip_forward: 0
+  net.ipv4.conf.all.mc_forwarding: 0
+
+  # Registra paquetes con direcciones de origen imposibles
+  net.ipv4.conf.all.log_martians: 1
+  net.ipv4.conf.default.log_martians: 1
+
+  # Descarta paquetes cuya direccion de origen no seria alcanzable
+  net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.conf.default.rp_filter: 1
+
+  # Mitigacion de inundacion SYN
+  net.ipv4.tcp_syncookies: 1
+
+  # No responder a peticiones ICMP dirigidas a broadcast
+  net.ipv4.icmp_echo_ignore_broadcasts: 1
+  net.ipv4.icmp_ignore_bogus_error_responses: 1
+
+  # Volcados de memoria identificados por PID
+  kernel.core_uses_pid: 1
+
+# --- Modulos de nucleo innecesarios ---
+sysctl_modulos_deshabilitados:
+  - dccp
+  - sctp
+  - rds
+  - tipc
+
+# Almacenamiento removible
+sysctl_modulos_almacenamiento:
+  - usb-storage
+  - firewire-core
+  - firewire-ohci

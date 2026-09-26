@@ -1,0 +1,6 @@
+---
+# Aplica todos los archivos de /etc/sysctl.d sin necesidad de reiniciar
+- name: recargar parametros de sysctl
+  ansible.builtin.command:
+    cmd: sysctl --system
+  changed_when: true

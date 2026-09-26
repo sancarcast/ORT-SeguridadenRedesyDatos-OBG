@@ -1,0 +1,13 @@
+# Modulos de nucleo deshabilitados - gestionado por Ansible
+
+# --- Protocolos de red no utilizados ---
+{% for modulo in sysctl_modulos_deshabilitados %}
+install {{ modulo }} /bin/false
+blacklist {{ modulo }}
+{% endfor %}
+
+# --- Almacenamiento removible ---
+{% for modulo in sysctl_modulos_almacenamiento %}
+install {{ modulo }} /bin/false
+blacklist {{ modulo }}
+{% endfor %}

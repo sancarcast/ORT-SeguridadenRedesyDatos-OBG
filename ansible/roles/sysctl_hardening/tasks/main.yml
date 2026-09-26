@@ -1,0 +1,86 @@
+---
+# ================================
+#  Rol sysctl_hardening - tareas
+# ================================
+
+- name: Desplegar los parametros de nucleo endurecidos
+  ansible.builtin.template:
+    src: hardening.conf.j2
+    dest: /etc/sysctl.d/60-hardening-cdg.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  notify: recargar parametros de sysctl
+  tags: [sysctl, nucleo]
+
+- name: Deshabilitar los modulos de nucleo no utilizados
+  ansible.builtin.template:
+    src: modulos.conf.j2
+    dest: /etc/modprobe.d/60-hardening-cdg.conf
+    owner: root
+    group: root
+    mode: "0644"
+    backup: true
+  tags: [sysctl, nucleo]
+
+# Los modulos ya cargados no se descargan solos
+- name: Descargar los modulos que estuvieran activos
+  ansible.builtin.command:
+    cmd: "modprobe -r {{ item }}"
+  loop: "{{ sysctl_modulos_deshabilitados + sysctl_modulos_almacenamiento }}"
+  register: sysctl_descarga
+  failed_when: false
+  changed_when: sysctl_descarga.rc == 0
+  tags: [sysctl, nucleo]
+
+- name: Aplicar los cambios pendientes antes de verificar
+  ansible.builtin.meta: flush_handlers
+  tags: [sysctl]
+
+# ---------------
+#  Verificacion
+# ---------------
+
+# Se comprueban los parametros efectivos en el nucleo, no el contenido del archivo
+- name: Consultar los valores efectivos
+  ansible.builtin.command:
+    cmd: "sysctl -n {{ item.key }}"
+  loop: "{{ (sysctl_parametros_nucleo | combine(sysctl_parametros_archivos) | combine(sysctl_parametros_red)) | dict2items }}"
+  register: sysctl_efectivos
+  changed_when: false
+  check_mode: false
+  failed_when: false
+  loop_control:
+    label: "{{ item.key }}"
+  tags: [sysctl, verificacion]
+
+- name: Informar los parametros que no tomaron el valor esperado
+  ansible.builtin.debug:
+    msg: >-
+      {{ item.item.key }}: esperado {{ item.item.value }},
+      efectivo {{ item.stdout | default('sin valor') }}
+  loop: "{{ sysctl_efectivos.results }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when:
+    - item.rc == 0
+    - item.stdout | trim != item.item.value | string
+  tags: [sysctl, verificacion]
+
+- name: Comprobar que los modulos quedaron bloqueados
+  ansible.builtin.shell:
+    cmd: "lsmod | grep -E '^({{ sysctl_modulos_deshabilitados | join('|') }})\\s' | wc -l"
+  register: sysctl_modulos_activos
+  changed_when: false
+  check_mode: false
+  tags: [sysctl, verificacion]
+
+- name: Advertir si algun modulo sigue cargado
+  ansible.builtin.debug:
+    msg: >-
+      {{ inventory_hostname }}: {{ sysctl_modulos_activos.stdout }} modulos
+      de la lista siguen cargados. Estaban en uso al aplicar el rol y se
+      descargaran en el proximo reinicio.
+  when: sysctl_modulos_activos.stdout | int > 0
+  tags: [sysctl, verificacion]

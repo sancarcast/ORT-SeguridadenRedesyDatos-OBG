@@ -1,0 +1,16 @@
+# Parametros de nucleo endurecidos - gestionado por Ansible
+
+# --- Proteccion de informacion del nucleo ---
+{% for clave, valor in sysctl_parametros_nucleo | dictsort %}
+{{ clave }} = {{ valor }}
+{% endfor %}
+
+# --- Sistema de archivos ---
+{% for clave, valor in sysctl_parametros_archivos | dictsort %}
+{{ clave }} = {{ valor }}
+{% endfor %}
+
+# --- Red ---
+{% for clave, valor in sysctl_parametros_red | dictsort %}
+{{ clave }} = {{ valor }}
+{% endfor %}
